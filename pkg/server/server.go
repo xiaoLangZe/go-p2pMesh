@@ -6,16 +6,6 @@
 // provides a REST API for external management panels.  It never forwards
 // business data, never creates a virtual NIC, and never participates in
 // hole punching.
-//
-// Usage:
-//
-//	srv, err := server.New(
-//	    server.WithHost("0.0.0.0"),
-//	    server.WithPort(29683),
-//	)
-//	if err != nil { log.Fatal(err) }
-//	go srv.Start()
-//	defer srv.Stop()
 package server
 
 import (
@@ -26,20 +16,27 @@ import (
 	"os"
 	"sync"
 	"time"
+
+	"github.com/yourorg/go-p2pmesh/internal/bootstrap"
+	"github.com/yourorg/go-p2pmesh/internal/crypto"
+	"github.com/yourorg/go-p2pmesh/internal/servermesh"
+	"github.com/yourorg/go-p2pmesh/internal/storage"
 )
 
 // Server is the top-level server instance.  It owns all subsystems
 // (config, storage, API, mesh, rooms, crypto, logger).
 type Server struct {
-	mu      sync.Mutex
-	cfg     *Config
-	logger  *slog.Logger
-	started bool
-	cancel  context.CancelFunc
-	wg      sync.WaitGroup
+	mu       sync.Mutex
+	cfg      *Config
+	logger   *slog.Logger
+	started  bool
+	cancel   context.CancelFunc
+	wg       sync.WaitGroup
 
-	// Sub-systems (populated in later phases)
-	listener net.Listener
+	store    storage.Store
+	bootSrv  *bootstrap.Server
+	mesh     *servermesh.Mesh
+	certAuth *crypto.CertAuth
 }
 
 // New creates a new Server with the given options.  The server is not
@@ -53,15 +50,48 @@ func New(opts ...Option) (*Server, error) {
 		return nil, fmt.Errorf("invalid server config: %w", err)
 	}
 	logger := newLogger(cfg.LogLevel, cfg.LogFile)
-	return &Server{
-		cfg:    cfg,
-		logger: logger,
-	}, nil
+
+	// Initialize the storage backend.
+	dbCfg := storage.DatabaseConfig{
+		Type:         cfg.DatabaseType,
+		DSN:          cfg.DatabaseDSN,
+		MaxOpenConns: 50,
+		MaxIdleConns: 10,
+	}
+	store, err := storage.NewStore(dbCfg)
+	if err != nil {
+		return nil, fmt.Errorf("create store: %w", err)
+	}
+
+	// Initialize the certificate authority.
+	ca, err := crypto.NewCertAuth(nil, false)
+	if err != nil {
+		return nil, fmt.Errorf("create cert auth: %w", err)
+	}
+
+	// Generate a local server ID (will be replaced with a proper node ID in P1+).
+	localID := "server-0001"
+
+	// Initialize the server mesh.
+	mesh := servermesh.NewMesh(localID, logger)
+
+	// Initialize the bootstrap server.
+	bootAddr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
+	bootSrv := bootstrap.NewServer(bootAddr, logger)
+
+	s := &Server{
+		cfg:      cfg,
+		logger:   logger,
+		store:    store,
+		bootSrv:  bootSrv,
+		mesh:     mesh,
+		certAuth: ca,
+	}
+
+	return s, nil
 }
 
 // Start begins listening on the configured port and serving requests.
-// It blocks until ctx is cancelled or Stop() is called.
-// In P0, it logs the startup message and waits for a shutdown signal.
 func (s *Server) Start() error {
 	s.mu.Lock()
 	if s.started {
@@ -81,8 +111,14 @@ func (s *Server) Start() error {
 		"db_type", s.cfg.DatabaseType,
 	)
 
-	// P0: just hold the process alive.  Subsequent phases will add
-	// the real listener, bootstrap, API server, etc.
+	// Start the bootstrap server.
+	if err := s.bootSrv.Start(ctx); err != nil {
+		return fmt.Errorf("start bootstrap: %w", err)
+	}
+
+	// Start the mesh gossip loop.
+	s.mesh.Start(ctx)
+
 	s.wg.Add(1)
 	go func() {
 		defer s.wg.Done()
@@ -106,12 +142,28 @@ func (s *Server) Stop() {
 		s.cancel()
 	}
 	s.mu.Unlock()
+
+	// Stop the bootstrap server.
+	if s.bootSrv != nil {
+		_ = s.bootSrv.Stop()
+	}
+
+	// Close the store.
+	if s.store != nil {
+		_ = s.store.Close()
+	}
+
 	s.wg.Wait()
 	s.logger.Info("server stopped")
 }
 
+// Store returns the underlying storage backend (for use by the API layer).
+func (s *Server) Store() storage.Store { return s.store }
+
+// Logger returns the server's logger.
+func (s *Server) Logger() *slog.Logger { return s.logger }
+
 // newLogger creates a slog.Logger from the configured level and file path.
-// If file is empty, logs go to stdout.
 func newLogger(level, file string) *slog.Logger {
 	var lvl slog.Level
 	switch level {
@@ -125,7 +177,6 @@ func newLogger(level, file string) *slog.Logger {
 		lvl = slog.LevelInfo
 	}
 	opts := &slog.HandlerOptions{Level: lvl}
-	// P0: log to stdout.  File logging will be wired in a later phase.
 	_ = file
 	return slog.New(slog.NewTextHandler(os.Stdout, opts))
 }
@@ -177,5 +228,5 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-// time used to avoid an "imported and not used" if time becomes needed later.
 var _ = time.Now
+var _ = net.Listen

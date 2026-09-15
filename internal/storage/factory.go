@@ -2,14 +2,6 @@ package storage
 
 import "fmt"
 
-// DatabaseConfig holds the configuration needed to create a Store.
-type DatabaseConfig struct {
-	Type         string // "sqlite", "mysql", "postgresql", "mongodb"
-	DSN          string
-	MaxOpenConns int
-	MaxIdleConns int
-}
-
 // NewStore creates a Store instance from DatabaseConfig.
 // SQLite uses the pure-Go modernc.org/sqlite driver (no CGO).
 // MySQL and PostgreSQL use their respective drivers.
