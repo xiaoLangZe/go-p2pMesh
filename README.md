@@ -2,11 +2,12 @@
 
 English | [简体中文](README.zh-CN.md)
 
-A Go library and binary pair for building overlay mesh networks between machines
-that have no public IPv4 address. One codebase provides two roles: a **server**
-that only coordinates (discovery, signaling, room state, port authorization) and
-a **client** that builds encrypted point-to-point tunnels to its peers and
-exposes them through a virtual NIC.
+A P2P networking architecture built with Go.
+
+One codebase provides two roles: a **server** that only coordinates (discovery,
+signaling, room state, port authorization) and a **client** that establishes
+encrypted peer-to-peer tunnels to other nodes and exposes them to local
+applications through a virtual NIC.
 
 > Status: under active development. The protocol, cryptographic, identity,
 > configuration and storage layers are implemented; the data plane is
