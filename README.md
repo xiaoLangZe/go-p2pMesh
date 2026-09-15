@@ -1,6 +1,6 @@
 # go-p2pmesh
 
-[English](README.md) | [Chinese](README.zh-CN.md)
+English | [简体中文](README.zh-CN.md)
 
 A Go-based P2P mesh networking library, built as two binaries (a server and a
 client) that share one module.

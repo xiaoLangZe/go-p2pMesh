@@ -1,6 +1,6 @@
 # go-p2pmesh
 
-[English](README.md) | [简体中文](README.zh-CN.md)
+[English](README.md) | 简体中文
 
 基于 Go 的 P2P 网状网络（mesh）库，构建为服务端与客户端两个二进制，共用同一个模块。
 
