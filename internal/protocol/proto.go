@@ -78,9 +78,11 @@ type Auth struct {
 	HandshakeMsg []byte `json:"hs_msg"`
 }
 
-// AuthOK confirms authentication and assigns the IPv6 address.
+// AuthOK confirms authentication and assigns both IPv6 and IPv4 addresses.
 type AuthOK struct {
-	IPv6Addr     string `json:"ipv6_addr"`
+	IPv6Addr       string        `json:"ipv6_addr"`
+	IPv4Addr       string        `json:"ipv4_addr"`
+	RoomSubnet     string        `json:"room_subnet,omitempty"` // e.g. "240.10.20.0/24"
 	BootstrapPeers []ServerEntry `json:"bootstrap_peers"`
 }
 
@@ -128,6 +130,7 @@ type PeerList struct {
 type PeerEntry struct {
 	NodeID     string `json:"node_id"`
 	IPv6Addr   string `json:"ipv6_addr"`
+	IPv4Addr   string `json:"ipv4_addr"`
 	PublicAddr string `json:"public_addr"`
 	NATType    string `json:"nat_type"`
 	RoomID     string `json:"room_id"`

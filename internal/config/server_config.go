@@ -44,7 +44,7 @@ type ServerConfig struct {
 	LogFile          string
 }
 
-// DefaultServerConfig returns sensible defaults matching DESIGN.md §5.2.
+// DefaultServerConfig returns the server configuration with default values.
 func DefaultServerConfig() *ServerConfig {
 	return &ServerConfig{
 		Host:           "0.0.0.0",

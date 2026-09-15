@@ -31,6 +31,7 @@ type Node struct {
 	PubKey     []byte       `json:"pubkey" db:"pubkey"`
 	RoomID     string       `json:"room_id" db:"room_id"`
 	IPv6Addr   string       `json:"ipv6_addr" db:"ipv6_addr"`
+	IPv4Addr   string       `json:"ipv4_addr" db:"ipv4_addr"`
 	PublicAddr string       `json:"public_addr" db:"public_addr"`
 	NATType    string       `json:"nat_type" db:"nat_type"`
 	Status     NodeStatus   `json:"status" db:"status"`

@@ -44,7 +44,7 @@ type ClientConfig struct {
 	LogFile  string
 }
 
-// DefaultClientConfig returns sensible defaults matching DESIGN.md §5.3.
+// DefaultClientConfig returns the client configuration with default values.
 func DefaultClientConfig() *ClientConfig {
 	return &ClientConfig{
 		Bootstrap: []string{},

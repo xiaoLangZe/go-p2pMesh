@@ -17,6 +17,9 @@ import (
 //go:embed migrations/001_init.sql
 var migrationSQL string
 
+//go:embed migrations/002_ipv4.sql
+var migrationIPv4SQL string
+
 // SQLStore implements Store using database/sql + sqlx.
 // It works with SQLite (via modernc.org/sqlite), MySQL, and PostgreSQL.
 // All queries use parameter binding — no string concatenation is permitted.
@@ -62,12 +65,28 @@ func NewSQLStore(driverName, dsn string, maxOpen, maxIdle int) (*SQLStore, error
 	return s, nil
 }
 
-// migrate executes embedded migration SQL.
+// migrate executes embedded migration SQL scripts in order.
 func (s *SQLStore) migrate() error {
-	// SQLite supports executing the full script in one Exec call.
-	// MySQL/PostgreSQL may need statement-by-statement execution.
-	_, err := s.db.Exec(migrationSQL)
-	return err
+	// Execute the initial schema.
+	if _, err := s.db.Exec(migrationSQL); err != nil {
+		return fmt.Errorf("migration 001: %w", err)
+	}
+	// Execute the IPv4 schema additions.
+	// SQLite ALTER TABLE statements must be run individually.
+	for _, stmt := range splitStatements(migrationIPv4SQL) {
+		stmt = trimSpace(stmt)
+		if stmt == "" {
+			continue
+		}
+		if _, err := s.db.Exec(stmt); err != nil {
+			// Ignore "duplicate column" errors (idempotent migrations).
+			if isDuplicateColumnErr(err) {
+				continue
+			}
+			return fmt.Errorf("migration 002: %w", err)
+		}
+	}
+	return nil
 }
 
 // rebind translates "?" placeholders to the driver-specific style.
@@ -82,17 +101,18 @@ func (s *SQLStore) rebind(query string) string {
 
 func (s *SQLStore) RegisterNode(ctx context.Context, n *Node) error {
 	_, err := s.db.ExecContext(ctx, s.rebind(`
-		INSERT INTO nodes (id, pubkey, room_id, ipv6_addr, public_addr, nat_type, status, created_at, last_seen)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO nodes (id, pubkey, room_id, ipv6_addr, ipv4_addr, public_addr, nat_type, status, created_at, last_seen)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT(id) DO UPDATE SET
 			pubkey = excluded.pubkey,
 			room_id = excluded.room_id,
 			ipv6_addr = excluded.ipv6_addr,
+			ipv4_addr = excluded.ipv4_addr,
 			public_addr = excluded.public_addr,
 			nat_type = excluded.nat_type,
 			status = excluded.status,
 			last_seen = excluded.last_seen`),
-		n.ID.String(), n.PubKey, n.RoomID, n.IPv6Addr, n.PublicAddr,
+		n.ID.String(), n.PubKey, n.RoomID, n.IPv6Addr, n.IPv4Addr, n.PublicAddr,
 		n.NATType, string(n.Status), time.Now().UTC(), time.Now().UTC())
 	return err
 }
@@ -100,7 +120,7 @@ func (s *SQLStore) RegisterNode(ctx context.Context, n *Node) error {
 func (s *SQLStore) GetNode(ctx context.Context, id string) (*Node, error) {
 	var n Node
 	err := s.db.GetContext(ctx, &n, s.rebind(`
-		SELECT id, pubkey, room_id, ipv6_addr, public_addr, nat_type, status, created_at, last_seen
+		SELECT id, pubkey, room_id, ipv6_addr, ipv4_addr, public_addr, nat_type, status, created_at, last_seen
 		FROM nodes WHERE id = ?`), id)
 	if err != nil {
 		return nil, err
@@ -110,7 +130,7 @@ func (s *SQLStore) GetNode(ctx context.Context, id string) (*Node, error) {
 }
 
 func (s *SQLStore) ListNodes(ctx context.Context, filter NodeFilter) ([]*Node, error) {
-	query := `SELECT id, pubkey, room_id, ipv6_addr, public_addr, nat_type, status, created_at, last_seen FROM nodes`
+	query := `SELECT id, pubkey, room_id, ipv6_addr, ipv4_addr, public_addr, nat_type, status, created_at, last_seen FROM nodes`
 	args := []interface{}{}
 	if filter.RoomID != "" {
 		query += ` WHERE room_id = ?`
@@ -197,7 +217,7 @@ func (s *SQLStore) RemoveRoomMember(ctx context.Context, roomID, nodeID string) 
 func (s *SQLStore) ListRoomMembers(ctx context.Context, roomID string) ([]*Node, error) {
 	var nodes []*Node
 	err := s.db.SelectContext(ctx, &nodes, s.rebind(`
-		SELECT n.id, n.pubkey, n.room_id, n.ipv6_addr, n.public_addr, n.nat_type, n.status, n.created_at, n.last_seen
+		SELECT n.id, n.pubkey, n.room_id, n.ipv6_addr, n.ipv4_addr, n.public_addr, n.nat_type, n.status, n.created_at, n.last_seen
 		FROM nodes n
 		JOIN room_members rm ON rm.node_id = n.id
 		WHERE rm.room_id = ? AND n.status = ?`),
@@ -283,3 +303,64 @@ var _ Store = (*SQLStore)(nil)
 
 // Ensure *sql.NullString is handled (used for nullable fields in scans).
 var _ = sql.NullString{}
+
+// splitStatements splits a SQL script into individual statements
+// by semicolons, respecting string literals and comments.
+func splitStatements(script string) []string {
+	var statements []string
+	var current []byte
+	inString := false
+	for i := 0; i < len(script); i++ {
+		ch := script[i]
+		if ch == '\'' {
+			inString = !inString
+		}
+		if ch == ';' && !inString {
+			stmt := string(current)
+			if trimSpace(stmt) != "" {
+				statements = append(statements, stmt)
+			}
+			current = current[:0]
+			continue
+		}
+		current = append(current, ch)
+	}
+	if len(current) > 0 {
+		stmt := string(current)
+		if trimSpace(stmt) != "" {
+			statements = append(statements, stmt)
+		}
+	}
+	return statements
+}
+
+// trimSpace removes leading and trailing whitespace.
+func trimSpace(s string) string {
+	start, end := 0, len(s)
+	for start < end && (s[start] == ' ' || s[start] == '\t' || s[start] == '\n' || s[start] == '\r') {
+		start++
+	}
+	for end > start && (s[end-1] == ' ' || s[end-1] == '\t' || s[end-1] == '\n' || s[end-1] == '\r') {
+		end--
+	}
+	return s[start:end]
+}
+
+// isDuplicateColumnErr returns true if the error is about a column
+// already existing (for idempotent ALTER TABLE migrations).
+func isDuplicateColumnErr(err error) bool {
+	return err != nil && containsStr(err.Error(), "duplicate column")
+}
+
+// containsStr reports whether s contains substr.
+func containsStr(s, substr string) bool {
+	if len(substr) == 0 {
+		return true
+	}
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
+}
