@@ -6,9 +6,10 @@ import (
 )
 
 // Manager is the server-side room manager.  It creates, deletes, and
-// manages room membership.  In P0, all methods return ErrNotImplemented.
+// manages room membership.  All methods below are scaffolds from the
+// P1 baseline; the real implementation is P6.
 type Manager struct {
-	// store storage.Store — will be added in P2
+	// store storage.Store — will be added in P6
 }
 
 // NewManager creates a new room Manager.

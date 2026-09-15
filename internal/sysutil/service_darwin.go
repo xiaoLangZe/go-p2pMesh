@@ -20,6 +20,6 @@ func DefaultInstaller() ServiceInstaller { return darwinInstaller{} }
 
 // detectPrivileges checks if the process is running as root.
 func detectPrivileges() (bool, error) {
-	// P8: check os.Geteuid() == 0.
+	// P4: check os.Geteuid() == 0.
 	return false, nil
 }

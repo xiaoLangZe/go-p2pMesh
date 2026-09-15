@@ -69,7 +69,7 @@ func New(opts ...Option) (*Server, error) {
 		return nil, fmt.Errorf("create cert auth: %w", err)
 	}
 
-	// Generate a local server ID (will be replaced with a proper node ID in P1+).
+	// Generate a local server ID (will be replaced with a proper node ID in P6+).
 	localID := "server-0001"
 
 	// Initialize the server mesh.

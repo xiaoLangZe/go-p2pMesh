@@ -51,7 +51,7 @@ func Generate() (*Identity, error) {
 	}
 	// Derive the X25519 public key from the private key.
 	// Using curve25519.X25519 would require an external dependency;
-	// for P0 we use the standard crypto/ecdh package.
+	// We use the standard crypto/ecdh package; ecdh key agreement is P9.
 	xPub, err = x25519Public(xPriv)
 	if err != nil {
 		return nil, fmt.Errorf("derive x25519 public key: %w", err)

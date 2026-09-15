@@ -20,6 +20,6 @@ func DefaultInstaller() ServiceInstaller { return windowsInstaller{} }
 
 // detectPrivileges checks if the process is running as Administrator.
 func detectPrivileges() (bool, error) {
-	// P8: check for elevated token via golang.org/x/sys/windows.
+	// P4: check for elevated token via golang.org/x/sys/windows.
 	return false, nil
 }

@@ -76,8 +76,8 @@ func (m *Mesh) gossipLoop(ctx context.Context, interval time.Duration) {
 }
 
 // doGossip sends the current server table to all peers.
-// In P1 this is a no-op log; the actual TCP gossip protocol will be
-// wired in a later phase.
+// In the P1 baseline this is a no-op log; the actual TCP gossip
+// protocol will be wired in a later phase.
 func (m *Mesh) doGossip() {
 	servers := m.table.List()
 	m.logger.Debug("gossip round", "servers", len(servers), "peers", len(m.peers))

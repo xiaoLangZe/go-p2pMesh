@@ -18,8 +18,8 @@ import (
 //
 // Rationale (D14): the design's phase order derives salted addresses before
 // real rooms are available. Rather than defer salting (which would force
-// addressing rework later), P1 salts against this fixed default room. The salt
-// function already takes (roomID, roomKey), so P5 only substitutes real rooms
+// addressing rework later), the P1 baseline salts against this fixed default room. The salt
+// function already takes (roomID, roomKey), so P6 only substitutes real rooms
 // without changing any signature.
 const DefaultRoomID RoomID = "default"
 

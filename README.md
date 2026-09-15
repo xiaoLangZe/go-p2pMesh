@@ -323,9 +323,12 @@ used. Templates with the same keys and comments live in `configs/`.
 | Key | Default | Description |
 | --- | --- | --- |
 | `enabled` | `true` | Enable the REST management API. |
-| `host` | `0.0.0.0` | Address the API listener binds to. |
+| `host` | `127.0.0.1` | Address the API listener binds to. Invariant I5: the management API is loopback-only by default; exposing it to the network is an explicit decision, made behind TLS + mTLS + a firewall. |
 | `port` | `29684` | API listener port. |
-| `cert_file` | `server.crt` | TLS certificate used to serve HTTPS. |
+| `tls_source` | `internal` | Where the HTTPS certificate comes from. `internal` = self-signed / mesh-internal CA (default, no exposure required); `acme` = Let's Encrypt via DNS-01 (P11). |
+| `acme_domain` | none | Public domain for ACME issuance; required when `tls_source = acme`. |
+| `acme_email` | none | ACME contact email. |
+| `cert_file` | `server.crt` | TLS certificate used to serve HTTPS (set automatically from `tls_source`). |
 | `key_file` | `server.key` | TLS private key for that certificate. |
 | `client_ca_file` | `clients_ca.crt` | CA used to verify client certificates (mTLS). |
 | `jwt_secret` | auto | JWT signing secret; generated on first start when empty. |

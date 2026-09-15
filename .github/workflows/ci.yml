@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: Build & vet & test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest,  goos: linux,   goarch: amd64 }
+          - { os: ubuntu-latest,  goos: linux,   goarch: arm64 }
+          - { os: ubuntu-latest,  goos: darwin,  goarch: amd64 }
+          - { os: ubuntu-latest,  goos: darwin,  goarch: arm64 }
+          - { os: windows-latest, goos: windows, goarch: amd64 }
+          - { os: windows-latest, goos: windows, goarch: arm64 }
+    env:
+      # Invariant: the whole project builds with CGO disabled. Any
+      # CGO-using dependency must fail the build here rather than slip
+      # through to a runtime that silently falls back to cgo.
+      CGO_ENABLED: "0"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build all packages
+        run: go build ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test ./...
+
+      - name: Cross-compile binaries
+        run: |
+          go build -o /tmp/gop2pmesh-server-${{ matrix.goos }}-${{ matrix.goarch }} ./cmd/server
+          go build -o /tmp/gop2pmesh-client-${{ matrix.goos }}-${{ matrix.goarch }} ./cmd/client
+
+  cgo-gate:
+    name: CGO leak gate
+    runs-on: ubuntu-latest
+    # The pure-Go invariant is enforced two ways, because each alone is
+    # weak:
+    #
+    #   1. The build matrix above sets CGO_ENABLED=0, so a dependency
+    #      that requires cgo fails the build outright.
+    #
+    #   2. This job greps for `import "C"` — the only way Go source can
+    #      request the cgo machinery. A comment or string mentioning "C"
+    #      is not enough; the import must actually be present. This runs
+    #      on every platform regardless of whether a C compiler exists,
+    #      so it cannot be defeated by a host that happens to have gcc.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: No cgo imports in source
+        run: |
+          if grep -rnE '^\s*import\s+"C"' --include='*.go' . ; then
+            echo "ERROR: cgo import \"C\" found. The project is pure-Go" \
+              "(CGO_ENABLED=0); wintun.dll is loaded dynamically at" \
+              "runtime, not via cgo." >&2
+            exit 1
+          fi
+          echo "OK: no cgo imports in source."
+      - name: Build with CGO disabled
+        run: CGO_ENABLED=0 go build ./...

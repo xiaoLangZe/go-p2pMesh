@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-// ErrNotImplemented is returned in P0.
+// ErrNotImplemented is returned by scaffolds completed in the P1 baseline.
 var ErrNotImplemented = fmt.Errorf("api not implemented in current phase")
 
 // Server is the REST API HTTP server.

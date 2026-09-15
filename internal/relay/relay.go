@@ -6,7 +6,7 @@ package relay
 
 import "fmt"
 
-// ErrNotImplemented is returned in P0.
+// ErrNotImplemented is returned by scaffolds completed in the P1 baseline.
 var ErrNotImplemented = fmt.Errorf("relay not implemented in current phase")
 
 // Client connects to a TURN relay and forwards opaque packets.

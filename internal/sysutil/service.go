@@ -9,7 +9,7 @@ type ServiceInstaller interface {
 	Uninstall(name string) error
 }
 
-// ErrNotImplemented is returned in P0.
+// ErrNotImplemented is returned by scaffolds completed in the P1 baseline.
 var notImplemented = errorString("sysutil not implemented in current phase")
 
 type errorString string

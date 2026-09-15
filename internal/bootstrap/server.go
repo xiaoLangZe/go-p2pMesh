@@ -105,7 +105,7 @@ func (s *Server) acceptLoop(ctx context.Context) {
 }
 
 // handleConn processes one client connection.
-// In P1 it performs the protocol handshake and message loop.
+// In the P1 baseline it performs the protocol handshake and message loop.
 func (s *Server) handleConn(ctx context.Context, conn net.Conn) {
 	defer conn.Close()
 

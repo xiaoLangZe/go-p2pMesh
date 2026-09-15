@@ -10,7 +10,7 @@ import (
 	"github.com/yourorg/go-p2pmesh/pkg/types"
 )
 
-// ErrNotImplemented is returned by all methods in P0.
+// ErrNotImplemented is returned by scaffolds completed in the P1 baseline.
 var ErrNotImplemented = fmt.Errorf("holepunch not implemented in current phase")
 
 // Strategy represents one hole-punching strategy in the priority matrix.
@@ -36,7 +36,7 @@ type PunchResult struct {
 // Engine coordinates the hole-punching strategy matrix.
 type Engine struct {
 	mu sync.Mutex
-	// Configuration will be added in P5.
+	// Configuration will be added in P2.
 }
 
 // NewEngine creates a hole-punching engine.

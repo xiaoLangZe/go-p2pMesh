@@ -3,13 +3,13 @@ package api
 import "net/http"
 
 // Middleware types for JWT + mTLS + rate-limiting.
-// Full implementation deferred to P3.
+// Full implementation deferred to P11.
 
 // AuthMiddleware verifies the JWT bearer token (and optionally the
 // client TLS certificate) on every request.
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// P3: validate Authorization header + optional client cert.
+		// P11: validate Authorization header + optional client cert.
 		next.ServeHTTP(w, r)
 	})
 }
@@ -17,7 +17,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 // RateLimitMiddleware enforces per-IP and per-token rate limits.
 func RateLimitMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// P3: implement token-bucket rate limiter.
+		// P11: implement token-bucket rate limiter.
 		next.ServeHTTP(w, r)
 	})
 }
@@ -39,7 +39,7 @@ func CORSMiddleware(allowedOrigin string, next http.Handler) http.Handler {
 // AuditMiddleware logs every management operation for audit trails.
 func AuditMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// P3: log method, path, user, timestamp to database.
+		// P11: log method, path, user, timestamp to database.
 		next.ServeHTTP(w, r)
 	})
 }

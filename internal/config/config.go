@@ -1,7 +1,7 @@
 // Package config implements the configuration loading logic for go-p2pmesh.
 //
 // Priority: command-line flag > environment variable > config file > default.
-// The P0 implementation uses a simple INI-style parser written with the
+// The P1-baseline implementation uses a simple INI-style parser written with the
 // standard library (no external dependency).  A later phase can swap in
 // gopkg.in/ini.v1 if more features are needed.
 package config

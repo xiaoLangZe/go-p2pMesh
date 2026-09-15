@@ -2,7 +2,7 @@
 //
 // The Store interface is implemented by multiple backends:
 //   - SQLStore (MySQL, PostgreSQL, SQLite) via database/sql + sqlx
-//   - MongoStore (MongoDB) via the official MongoDB driver (P2)
+//   - MongoStore (MongoDB) via the official MongoDB driver (P6)
 //   - SQLiteStore (client-side, pure Go via modernc.org/sqlite)
 //
 // All SQL-based implementations MUST use parameter-bound queries.
@@ -117,7 +117,7 @@ type Store interface {
 	Close() error
 }
 
-// ErrNotImplemented is returned by Store methods in P0.
+// ErrNotImplemented is returned by scaffolds completed in the P1 baseline.
 var ErrNotImplemented = fmt.Errorf("storage not implemented in current phase")
 
 // ErrNodeIDConflict is returned by RegisterNode when the NodeID already exists

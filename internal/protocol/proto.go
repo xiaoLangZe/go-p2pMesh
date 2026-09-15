@@ -6,7 +6,8 @@
 //   [4 bytes: payload length (big-endian uint32)]
 //   [N bytes: JSON-encoded payload]
 //
-// This avoids the need for protoc/protobuf code generation in P1.
+// This avoids the need for protoc/protobuf code generation; the protocol
+// framing was completed in the P1 baseline.
 // A later phase can swap to protobuf if binary size or performance demands it.
 package protocol
 

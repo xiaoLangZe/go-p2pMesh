@@ -48,7 +48,7 @@ func CollectFingerprint() ([]byte, error) {
 
 // x25519Public derives the X25519 public key from a 32-byte private key
 // using the standard library's crypto/ecdh package (available since Go 1.20).
-// This avoids external dependencies for P0.
+// This avoids external dependencies; the fingerprint is computed in the P1 baseline.
 func x25519Public(priv [32]byte) ([32]byte, error) {
 	curve := ecdh.X25519()
 	secret, err := curve.NewPrivateKey(priv[:])

@@ -7,7 +7,7 @@ import (
 	"net"
 )
 
-// ErrNotImplemented is returned by all methods in P0.
+// ErrNotImplemented is returned by scaffolds completed in the P1 baseline.
 var ErrNotImplemented = fmt.Errorf("tunnel not implemented in current phase")
 
 // Tunnel wraps a KCP session encrypted with Noise.

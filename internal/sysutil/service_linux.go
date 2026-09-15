@@ -20,6 +20,6 @@ func DefaultInstaller() ServiceInstaller { return linuxInstaller{} }
 
 // detectPrivileges checks for root or CAP_NET_ADMIN.
 func detectPrivileges() (bool, error) {
-	// P8: check /proc/self/status for CapEff.
+	// P4: check /proc/self/status for CapEff.
 	return false, nil
 }

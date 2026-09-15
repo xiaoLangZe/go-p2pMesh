@@ -16,7 +16,7 @@ const IPv6ULA = "fd00:9bd8::"
 // a different address in each room, so an address learned in room A does not
 // resolve in room B.
 //
-// Unlike the pre-P1 version this function takes the room key, not just the node
+// Unlike the pre-P1-baseline version this function takes the room key, not just the node
 // ID — an unsalted address would be identical across rooms and would let any
 // peer reach a node regardless of room membership.
 func DeriveIPv6Addr(nodeID NodeID, roomKey RoomKey) (netip.Addr, error) {

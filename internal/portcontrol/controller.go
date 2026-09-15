@@ -107,11 +107,11 @@ func (c *Controller) ListRules() []*PortRule {
 	return result
 }
 
-// ErrNotImplemented is returned by unimplemented forwarding methods in P0.
+// ErrNotImplemented is returned by scaffolds completed in the P1 baseline.
 var ErrNotImplemented = fmt.Errorf("port forwarding not implemented in current phase")
 
 // Forward is the virtual-port→local-port forwarder.
-// It will be implemented in P2 using gVisor netstack.
+// It will be implemented in P7 using gVisor netstack.
 func (c *Controller) Forward(virtualPort int, data []byte) ([]byte, error) {
 	return nil, ErrNotImplemented
 }

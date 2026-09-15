@@ -60,10 +60,11 @@ func (p *Pool) Best() (*StunServer, error) {
 	return best, nil
 }
 
-// CheckHealth probes all STUN servers.  In P0, this is a no-op.
+// CheckHealth probes all STUN servers.  Currently a no-op; the real STUN
+// Binding health check is P2.
 func (p *Pool) CheckHealth(timeout time.Duration) {
-	// P5: implement actual STUN Binding health checks.
+	// P2: implement actual STUN Binding health checks.
 }
 
-// ErrNotImplemented is returned by unimplemented STUN client methods in P0.
+// ErrNotImplemented is returned by scaffolds completed in the P1 baseline.
 var ErrNotImplemented = fmt.Errorf("stun not implemented in current phase")

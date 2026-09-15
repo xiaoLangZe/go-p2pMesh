@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-// ErrNotImplemented is returned in P0.
+// ErrNotImplemented is returned by scaffolds completed in the P1 baseline.
 var ErrNotImplemented = fmt.Errorf("routing not implemented in current phase")
 
 // PeerEntry maps an IPv6 address to a peer's tunnel connection.

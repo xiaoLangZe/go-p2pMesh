@@ -14,8 +14,8 @@ func NewStore(cfg DatabaseConfig) (Store, error) {
 	case "postgresql", "postgres":
 		return NewSQLStore("postgresql", cfg.DSN, cfg.MaxOpenConns, cfg.MaxIdleConns)
 	case "mongodb":
-		// P1: MongoDB adapter not yet implemented.
-		return noopStore{}, fmt.Errorf("mongodb support planned for P2, using noop")
+		// MongoDB adapter not yet implemented (P6).
+		return noopStore{}, fmt.Errorf("mongodb support planned for P6, using noop")
 	default:
 		return nil, fmt.Errorf("unsupported database type %q", cfg.Type)
 	}
