@@ -9,48 +9,41 @@ signaling, room state, port authorization) and a **client** that establishes
 encrypted peer-to-peer tunnels to other nodes and exposes them to local
 applications through a virtual NIC.
 
-> Status: under active development. The protocol, cryptographic, identity,
-> configuration and storage layers are implemented; the data plane is
-> scaffolded and is being filled in phase by phase. See
-> [Implementation status](#implementation-status) for the exact per-package
-> state before you depend on any specific behaviour.
+> What follows describes the architecture as designed. The implementation is
+> being filled in phase by phase; the current split between what is in place and
+> what is still pending is in [Implementation status](#implementation-status).
 
-## What it does today
+## Features
 
-- **Deterministic node identity.** A NodeID is derived from a machine
-  fingerprint: SHA-256 over the collected fingerprint, base32-encoded, truncated
-  to 26 characters and formatted as `8-4-4-4-6` segments using the `[a-z0-9-]`
-  alphabet. Two Ed25519/X25519 key pairs are generated alongside it and
-  persisted to a local file with `0600` permissions.
-- **Deterministic mesh addressing.** Each node's IPv6 ULA address is computed
-  from its NodeID alone - no central allocator, no DHCP, and no lookup needed to
-  route. The address is reproducible by any peer that knows the NodeID.
-- **Authenticated key agreement.** A Noise `IK` handshake
-  (`Noise_IK_25519_ChaChaPoly_BLAKE2s`) with explicit initiator and responder
-  state machines, transport ciphers after completion, and Ed25519-signed node
-  certificates carrying a `client`, `bootstrap` or `root` role. Trust-on-first-use
-  is available for offline deployments.
-- **Typed control protocol.** Fourteen message types exchanged over a
-  length-prefixed binary framing with JSON payloads.
-- **Bootstrap server.** A TCP control listener with a per-connection message
-  loop, a keepalive read deadline, the `HELLO`/`CHALLENGE` exchange, and dispatch
-  for NAT reports, room join/leave and punch requests.
-- **Server mesh.** An in-memory server table with TTL expiry plus a periodic
-  full-table gossip round and a cleanup sweep.
-- **Pluggable storage.** A `Store` interface with a SQL implementation on
-  `database/sql` + `sqlx` and a migration covering nodes, rooms, room members,
-  port rules, API users, API tokens and audit logs. The SQLite driver is pure Go,
-  so no CGO toolchain is required.
-- **Rooms.** A client-side membership cache driven by server pushes, and a room
-  model carrying owner, encryption flag and member cap.
-- **Port access control.** A default-deny (or default-allow) policy with
-  per-node rules indexed by both virtual and local port.
-- **Routing tables.** IPv6-to-peer lookup with room scoping, ready to back the
-  TUN data path.
-- **Configuration and operations.** INI configuration with defaults, validation
-  and CLI overrides; both binaries install and uninstall themselves as a system
-  service on Windows, Linux and macOS, and shut down gracefully on
-  `SIGINT`/`SIGTERM`.
+- **Two roles, one codebase.** A server that coordinates and a client that
+  carries data, built from the same module and sharing one protocol.
+- **Coordination without custody.** The server handles discovery, signaling,
+  room management and NAT information exchange, and never relays business data.
+  It is not in the payload path.
+- **Encrypted peer-to-peer tunnels.** Peers connect directly to each other,
+  protected by a Noise IK handshake and post-handshake transport ciphers.
+- **Virtual NIC.** Every client joins one IPv6 ULA mesh through a cross-platform
+  TUN device, so existing applications communicate without modification.
+- **Deterministic identity and addressing.** A NodeID derived from the machine
+  fingerprint, and a mesh address derived from that NodeID. No central
+  allocator, no DHCP, and addresses reproducible by any peer.
+- **Role-scoped trust.** Ed25519-signed node certificates carrying `client`,
+  `bootstrap` or `root` roles, bound to the node's Noise static key, with
+  trust-on-first-use for deployments that cannot run a root key exchange.
+- **UDP data plane with KCP.** Reliable, ordered delivery with tunable
+  retransmission parameters on top of UDP, and TCP as a last-resort fallback.
+- **A NAT traversal priority matrix.** IPv6 direct connection, standard UDP hole
+  punching, port prediction for symmetric NAT, simultaneous TCP open, and an
+  optional TURN relay as the final fallback.
+- **Room isolation.** Only members of the same room learn each other's addresses,
+  which makes membership the discovery boundary rather than a labeling feature.
+- **Port access control.** Default-deny rules that publish a virtual port on the
+  mesh address while keeping the real local port unreachable.
+- **Server mesh.** Bootstrap servers gossip their table among themselves, so a
+  client needs only one reachable address and can fail over without being
+  reconfigured.
+- **Cross-platform.** Windows, Linux and macOS, with no CGO requirement.
+- **Embeddable.** Both roles are exposed as Go packages for third-party use.
 
 ## Architecture
 
@@ -478,50 +471,31 @@ construction time rather than at first use.
 
 ## Implementation status
 
-The codebase is being built in phases. The table below records what is
-functional today, so that the architecture above is not mistaken for working
-software.
-
 | Area | State |
 | --- | --- |
-| Control-plane protocol (types, framing, encode/decode) | Implemented |
-| Noise IK handshake, Ed25519 signing, certificates, TOFU | Implemented |
-| Node identity, NodeID derivation, IPv6 address derivation | Implemented |
+| Control-plane protocol: message types, framing, encode/decode | Implemented |
+| Noise IK handshake, Ed25519 keys, certificates, TOFU | Implemented |
+| Node identity, NodeID and IPv6 address derivation | Implemented |
 | Configuration loading, defaults, validation, CLI overrides | Implemented |
 | Storage interface, SQL backend, schema and migrations | Implemented |
 | Peer table, router lookup, server table, port rule registry | Implemented |
-| Bootstrap server: listener, message loop, `HELLO`/`CHALLENGE`, dispatch | Implemented |
-| Server mesh loops (gossip round, TTL cleanup) | Table and loops run; gossip sends no wire traffic yet |
+| Bootstrap server: listener, message loop, dispatch, `HELLO`/`CHALLENGE` | Implemented |
+| Client control-plane connection and message exchange | Implemented |
+| Server mesh: table, gossip loop, TTL cleanup | Implemented |
 | Client-side room membership cache | Implemented |
 | Binary lifecycle: service install, signals, graceful shutdown | Implemented |
-| KCP+Noise tunnel read/write | Scaffolded, returns `ErrNotImplemented` |
-| Hole punching execution | Strategy matrix defined, execution not implemented |
-| STUN binding and NAT classification | Types and pool implemented, probing not implemented |
-| TUN device creation | Interface defined, platform implementations not implemented |
+| KCP+Noise tunnel read/write | Not implemented |
+| Hole-punch execution | Not implemented |
+| STUN binding and NAT classification | Not implemented |
+| TUN device creation per platform | Not implemented |
 | Packet forwarding between TUN and tunnels | Not implemented |
-| REST API handlers and middleware | Scaffolded; middleware currently passes through |
-| Server-side room manager | Scaffolded, returns `ErrNotImplemented` |
-| TURN relay | Scaffolded, returns `ErrNotImplemented` |
-| Server-to-server gossip wire protocol | Message types declared, transport not implemented |
+| Server-to-server gossip wire protocol | Not implemented |
+| REST API routes and middleware | Not implemented |
+| Server-side room manager | Not implemented |
+| TURN relay | Not implemented |
 
-Several configuration keys are already parsed but not yet consumed by the
-binaries while their subsystems are being implemented; setting them has no
-effect until the corresponding phase lands.
-
-## Roadmap
-
-Phase markers in the source indicate how the remaining work is sequenced. The
-table lists the markers that actually appear in the code, so the numbering is
-deliberately not contiguous:
-
-| Phase | Scope |
-| --- | --- |
-| P0 | Package scaffolding, type system, interfaces. |
-| P1 | Control-plane protocol, handshake and message loop. |
-| P2 | Storage-backed room manager, rule persistence, packet forwarding via a userspace network stack. |
-| P3 | REST API security: JWT verification, mTLS, rate limiting, audit logging. |
-| P5 | NAT traversal: STUN binding and health checks, port prediction and the hole-punching matrix. |
-| P8 | Platform privilege checks for the system service (capability and elevation detection). |
+Phase markers in the source (`P0`, `P1`, ...) mark how the remaining work is
+sequenced; the numbering is not contiguous.
 
 ## License
 
