@@ -45,12 +45,16 @@ type ServerConfig struct {
 }
 
 // DefaultServerConfig returns the server configuration with default values.
+//
+// The API listener defaults to loopback (invariant I5). Set `api.host = 0.0.0.0`
+// (or a specific address) in the config to expose management externally — that
+// is an explicit decision, not a default.
 func DefaultServerConfig() *ServerConfig {
 	return &ServerConfig{
 		Host:           "0.0.0.0",
 		Port:           29683,
 		APIEnabled:     true,
-		APIHost:        "0.0.0.0",
+		APIHost:        "127.0.0.1",
 		APIPort:        29684,
 		TokenTTLHours:  24,
 		AdminUser:      "admin",

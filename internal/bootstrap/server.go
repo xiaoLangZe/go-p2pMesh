@@ -9,6 +9,8 @@ package bootstrap
 import (
 	"bufio"
 	"context"
+	"crypto/ed25519"
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -22,22 +24,29 @@ import (
 	"github.com/yourorg/go-p2pmesh/pkg/types"
 )
 
+// AddrResolver derives the mesh addresses a node should use. The server injects
+// this so the bootstrap layer does not need to know about room keys or storage.
+type AddrResolver func(nodeID types.NodeID) (ipv6, ipv4, subnet string, err error)
+
 // Server is the server-side control-plane handler.
 type Server struct {
-	addr       string
-	listener   net.Listener
-	logger     *slog.Logger
-	mu         sync.Mutex
-	clients    map[string]*clientConn // keyed by remote address
+	addr     string
+	listener net.Listener
+	logger   *slog.Logger
+	addrFn   AddrResolver
+	mu       sync.Mutex
+	clients  map[string]*clientConn // keyed by remote address
 }
 
 // clientConn wraps a single accepted client connection.
 type clientConn struct {
-	conn   net.Conn
+	conn  net.Conn
 	nodeID types.NodeID
-	r      *bufio.Reader
-	w      *bufio.Writer
-	mu     sync.Mutex
+	pubKey []byte
+	nonce []byte // challenge nonce issued to this client, awaiting proof
+	r     *bufio.Reader
+	w     *bufio.Writer
+	mu    sync.Mutex
 }
 
 // NewServer creates a bootstrap Server bound to addr ("host:port").
@@ -50,6 +59,14 @@ func NewServer(addr string, logger *slog.Logger) *Server {
 		logger:  logger,
 		clients: make(map[string]*clientConn),
 	}
+}
+
+// SetAddrResolver installs the callback used to compute the mesh addresses
+// reported in AUTH_OK. Until one is set, AUTH_OK carries empty addresses.
+func (s *Server) SetAddrResolver(fn AddrResolver) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.addrFn = fn
 }
 
 // Start begins listening for incoming client connections.
@@ -143,13 +160,28 @@ func (s *Server) handleMessage(ctx context.Context, cc *clientConn, msgType prot
 		if err := json.Unmarshal(body, &hello); err != nil {
 			return fmt.Errorf("decode hello: %w", err)
 		}
-		cc.nodeID = types.NodeID(hello.NodeID)
+		nodeID := types.NodeID(hello.NodeID)
+		if err := nodeID.Validate(); err != nil {
+			return fmt.Errorf("reject hello: %w", err)
+		}
+		cc.nodeID = nodeID
+		cc.pubKey = hello.PubKey
 		s.logger.Info("hello received", "node_id", hello.NodeID, "version", hello.Version)
-		// Respond with a challenge.
 		return s.sendChallenge(cc, hello)
 
+	case protocol.MsgAuth:
+		var auth protocol.Auth
+		if err := json.Unmarshal(body, &auth); err != nil {
+			return fmt.Errorf("decode auth: %w", err)
+		}
+		if err := s.verifyProofOfPossession(cc, &auth); err != nil {
+			s.logger.Warn("rejecting registration", "node_id", cc.nodeID, "err", err)
+			return err
+		}
+		s.logger.Info("registration accepted", "node_id", cc.nodeID)
+		return s.sendAuthOK(cc)
+
 	case protocol.MsgKeepalive:
-		// Keepalive — just reset the deadline.
 		return nil
 
 	case protocol.MsgNATProbe:
@@ -185,16 +217,68 @@ func (s *Server) handleMessage(ctx context.Context, cc *clientConn, msgType prot
 	}
 }
 
-// sendChallenge sends a Challenge message to the client.
+// sendChallenge sends a Challenge message carrying a fresh random nonce.
+//
+// The nonce must be unpredictable: the client's proof-of-possession signature is
+// over this value, so a fixed or guessed nonce would let a captured signature be
+// replayed by an attacker claiming the same NodeID.
 func (s *Server) sendChallenge(cc *clientConn, hello protocol.Hello) error {
-	nonce := make([]byte, 32)
-	chal := protocol.Challenge{
-		Nonce: nonce,
+	nonce := make([]byte, protocol.ChallengeNonceLen)
+	if _, err := rand.Read(nonce); err != nil {
+		return fmt.Errorf("generate challenge nonce: %w", err)
 	}
+	cc.nonce = nonce
+	chal := protocol.Challenge{Nonce: nonce}
 	if err := s.send(cc, protocol.MsgChallenge, chal); err != nil {
 		return fmt.Errorf("send challenge: %w", err)
 	}
 	return nil
+}
+
+// verifyProofOfPossession checks the client's Ed25519 signature over the
+// challenge nonce (D5).
+//
+// Two things must hold:
+//  1. A challenge was actually issued on this connection.
+//  2. The signature verifies against the public key the client presented.
+//
+// What this does and does not buy: it proves the registrant holds the private
+// key for the NodeID it claims, so a binding is attributable and can be revoked.
+// It does not by itself stop a first-mover from registering an unused ID — that
+// is why the operator also needs an unbind path (see the store's UnbindNodeID).
+func (s *Server) verifyProofOfPossession(cc *clientConn, auth *protocol.Auth) error {
+	if len(cc.nonce) == 0 {
+		return fmt.Errorf("auth received before challenge")
+	}
+	if len(cc.pubKey) != ed25519.PublicKeySize {
+		return fmt.Errorf("invalid public key length %d", len(cc.pubKey))
+	}
+	if auth.NodeID != "" && auth.NodeID != cc.nodeID.String() {
+		return fmt.Errorf("proof node id %q does not match hello %q", auth.NodeID, cc.nodeID)
+	}
+	payload := protocol.ChallengePayload(cc.nonce, cc.nodeID.String())
+	if !ed25519.Verify(ed25519.PublicKey(cc.pubKey), payload, auth.Signature) {
+		return fmt.Errorf("invalid proof of possession signature")
+	}
+	// Consume the nonce so a second AUTH on this connection cannot replay it.
+	cc.nonce = nil
+	return nil
+}
+
+// sendAuthOK acknowledges a verified registration and reports the addresses the
+// client should configure.
+func (s *Server) sendAuthOK(cc *clientConn) error {
+	ok := protocol.AuthOK{}
+	if s.addrFn != nil {
+		ipv6, ipv4, subnet, err := s.addrFn(cc.nodeID)
+		if err != nil {
+			return fmt.Errorf("derive addresses: %w", err)
+		}
+		ok.IPv6Addr = ipv6
+		ok.IPv4Addr = ipv4
+		ok.RoomSubnet = subnet
+	}
+	return s.send(cc, protocol.MsgAuthOK, ok)
 }
 
 // send writes a message to the client connection.
@@ -294,6 +378,19 @@ func (c *Client) SendRoomJoin(roomID, password string) error {
 func (c *Client) SendKeepalive() error {
 	return c.send(protocol.MsgKeepalive, protocol.Keepalive{
 		Timestamp: time.Now().Unix(),
+	})
+}
+
+// SendAuth answers the server's challenge with a proof of possession.
+//
+// signPriv is the node's Ed25519 private key; the signature binds the challenge
+// nonce to this NodeID so the server can attribute the registration.
+func (c *Client) SendAuth(nodeID types.NodeID, nonce []byte, signPriv ed25519.PrivateKey) error {
+	payload := protocol.ChallengePayload(nonce, nodeID.String())
+	sig := ed25519.Sign(signPriv, payload)
+	return c.send(protocol.MsgAuth, protocol.Auth{
+		NodeID:    nodeID.String(),
+		Signature: sig,
 	})
 }
 

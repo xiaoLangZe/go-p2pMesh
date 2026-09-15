@@ -6,7 +6,9 @@ port = 29683
 
 [api]
 enabled = true
-host = 0.0.0.0
+; Loopback by default: exposing the management API to the network is an
+; explicit decision. Set to 0.0.0.0 only behind TLS + mTLS + firewall.
+host = 127.0.0.1
 port = 29684
 ; HTTPS certificate and key
 cert_file = server.crt

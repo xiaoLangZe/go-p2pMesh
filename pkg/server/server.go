@@ -130,27 +130,39 @@ func (s *Server) Start() error {
 	return nil
 }
 
-// Stop gracefully shuts down the server, waiting for goroutines to exit.
+// Stop releases every resource the server holds and waits for goroutines to
+// exit. It is safe to call more than once and safe to call on a server that was
+// never started.
+//
+// Releasing regardless of whether Start() ran matters: New() already opens the
+// database, so an early return here would leak the handle for the life of the
+// process (and on Windows would keep the file locked).
 func (s *Server) Stop() {
 	s.mu.Lock()
-	if !s.started {
-		s.mu.Unlock()
-		return
-	}
+	cancel := s.cancel
+	s.cancel = nil
+	wasStarted := s.started
 	s.started = false
-	if s.cancel != nil {
-		s.cancel()
-	}
+
+	// Detach resources under the lock so a concurrent Stop cannot double-close.
+	store := s.store
+	s.store = nil
+	bootSrv := s.bootSrv
+	s.bootSrv = nil
 	s.mu.Unlock()
 
-	// Stop the bootstrap server.
-	if s.bootSrv != nil {
-		_ = s.bootSrv.Stop()
+	if !wasStarted && store == nil && bootSrv == nil {
+		return // already fully stopped
 	}
 
-	// Close the store.
-	if s.store != nil {
-		_ = s.store.Close()
+	if cancel != nil {
+		cancel()
+	}
+	if bootSrv != nil {
+		_ = bootSrv.Stop()
+	}
+	if store != nil {
+		_ = store.Close()
 	}
 
 	s.wg.Wait()
@@ -199,11 +211,15 @@ type Config struct {
 }
 
 // DefaultConfig returns a Config populated with sensible defaults.
+//
+// The API listener defaults to loopback (invariant I5: "默认不暴露"). Exposing
+// the management API to the network is an explicit operator decision, because a
+// reachable API widens the attack surface to whatever its auth strength is.
 func DefaultConfig() *Config {
 	return &Config{
 		Host:         "0.0.0.0",
 		Port:         29683,
-		APIHost:      "0.0.0.0",
+		APIHost:      "127.0.0.1",
 		APIPort:      29684,
 		DatabaseType: "sqlite",
 		DatabaseDSN:  "data/gop2pmesh.db",

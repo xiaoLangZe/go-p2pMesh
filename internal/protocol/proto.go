@@ -53,10 +53,29 @@ func (m MessageType) String() string {
 
 // Hello is sent by the client to announce its identity.
 type Hello struct {
-	NodeID    string `json:"node_id"`
-	PubKey    []byte `json:"pubkey"`
-	Cert      []byte `json:"cert,omitempty"`
-	Version   string `json:"version"`
+	NodeID  string `json:"node_id"`
+	PubKey  []byte `json:"pubkey"`
+	Cert    []byte `json:"cert,omitempty"`
+	Version string `json:"version"`
+}
+
+// ChallengeNonceLen is the byte length of the challenge nonce. 32 bytes matches
+// the security level of the Ed25519 signature made over it.
+const ChallengeNonceLen = 32
+
+// ChallengePayload returns the exact byte string a client must sign to prove
+// possession of its NodeID's key. Both sides must build it the same way, so it
+// lives here rather than being duplicated in the client and server.
+//
+// Binding the NodeID into the signed payload (not just the nonce) prevents a
+// proof captured for one identity from being replayed for another.
+func ChallengePayload(nonce []byte, nodeID string) []byte {
+	out := make([]byte, 0, len(nonce)+len(nodeID)+16)
+	out = append(out, []byte("gop2pmesh/pop/v1:")...)
+	out = append(out, nonce...)
+	out = append(out, ':')
+	out = append(out, []byte(nodeID)...)
+	return out
 }
 
 // Challenge is sent by the server with a nonce and server table snapshot.
@@ -73,9 +92,18 @@ type ServerEntry struct {
 	ID     string `json:"id"`
 }
 
-// Auth carries the Noise handshake message.
+// Auth answers the server's challenge.
+//
+// It carries the Noise handshake message plus a proof of possession: an Ed25519
+// signature over the challenge nonce made with the machine-identity key. The
+// proof exists because NodeIDs are derived from non-secret machine fingerprints
+// (D5) — without it, anyone who guesses an ID could register it and lock the
+// legitimate machine out. With it, a binding is always tied to a key the
+// registrant actually holds, so an abusive registration is attributable.
 type Auth struct {
 	HandshakeMsg []byte `json:"hs_msg"`
+	NodeID       string `json:"node_id"`
+	Signature    []byte `json:"signature"` // Ed25519 over (nonce || node_id)
 }
 
 // AuthOK confirms authentication and assigns both IPv6 and IPv4 addresses.

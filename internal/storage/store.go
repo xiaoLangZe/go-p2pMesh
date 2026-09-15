@@ -80,11 +80,21 @@ type DatabaseConfig struct {
 // Store is the storage abstraction implemented by all backends.
 type Store interface {
 	// Nodes
+	//
+	// RegisterNode binds a NodeID to a public key. It MUST reject the
+	// registration when the ID is already bound to a different key (invariant
+	// I8: "冲突不静默") and report ErrNodeIDConflict so the caller can alert
+	// rather than silently overwrite a legitimate node's record.
 	RegisterNode(ctx context.Context, n *Node) error
 	GetNode(ctx context.Context, id string) (*Node, error)
 	ListNodes(ctx context.Context, filter NodeFilter) ([]*Node, error)
 	UpdateNodeStatus(ctx context.Context, id string, status NodeStatus) error
 	DeleteNode(ctx context.Context, id string) error
+	// UnbindNodeID releases a NodeID↔pubkey binding so a legitimate machine that
+	// lost its key (or was locked out by a squatter) can register again (D5).
+	// This is an administrative action and must not be reachable
+	// unauthenticated; the API layer is responsible for that gate.
+	UnbindNodeID(ctx context.Context, id string) error
 
 	// Rooms
 	CreateRoom(ctx context.Context, r *types.Room) error
@@ -110,6 +120,12 @@ type Store interface {
 // ErrNotImplemented is returned by Store methods in P0.
 var ErrNotImplemented = fmt.Errorf("storage not implemented in current phase")
 
+// ErrNodeIDConflict is returned by RegisterNode when the NodeID already exists
+// with a different public key. This is the mechanism behind invariant I8: the
+// collision is surfaced to the operator instead of silently rebinding the ID,
+// which would let one machine evict another from the mesh.
+var ErrNodeIDConflict = fmt.Errorf("node id already bound to a different public key")
+
 // noopStore is a Store that returns ErrNotImplemented for every method.
 type noopStore struct{}
 
@@ -118,6 +134,7 @@ func (noopStore) GetNode(ctx context.Context, id string) (*Node, error)         
 func (noopStore) ListNodes(ctx context.Context, f NodeFilter) ([]*Node, error)      { return nil, ErrNotImplemented }
 func (noopStore) UpdateNodeStatus(ctx context.Context, id string, s NodeStatus) error { return ErrNotImplemented }
 func (noopStore) DeleteNode(ctx context.Context, id string) error                   { return ErrNotImplemented }
+func (noopStore) UnbindNodeID(ctx context.Context, id string) error                { return ErrNotImplemented }
 func (noopStore) CreateRoom(ctx context.Context, r *types.Room) error              { return ErrNotImplemented }
 func (noopStore) GetRoom(ctx context.Context, id string) (*types.Room, error)       { return nil, ErrNotImplemented }
 func (noopStore) ListRooms(ctx context.Context) ([]*types.Room, error)             { return nil, ErrNotImplemented }

@@ -1,7 +1,6 @@
 package types
 
 import (
-	"crypto/sha256"
 	"fmt"
 	"net/netip"
 )
@@ -10,28 +9,32 @@ import (
 // It can be overridden via configuration but must be a /64 ULA (fd00::/8 range).
 const IPv6ULA = "fd00:9bd8::"
 
-// DeriveIPv6Addr computes the mesh-internal IPv6 address for a given NodeID.
-// The address is the ULA prefix + the lower 48 bits of SHA-256(NodeID).
-// The result is deterministic and globally unique: the address can be
-// reconstructed from the NodeID alone, without any central allocator.
-func DeriveIPv6Addr(nodeID NodeID) (netip.Addr, error) {
-	h := sha256.Sum256([]byte(nodeID))
-	// Use the lower 48 bits (6 bytes) of the hash as the interface identifier.
+// DeriveIPv6Addr computes the mesh-internal IPv6 address for a node in a room.
+//
+// The address is the ULA prefix + the lower 48 bits of the room-salted digest
+// of the node ID. Salting by room key enforces invariant I7: the same node has
+// a different address in each room, so an address learned in room A does not
+// resolve in room B.
+//
+// Unlike the pre-P1 version this function takes the room key, not just the node
+// ID — an unsalted address would be identical across rooms and would let any
+// peer reach a node regardless of room membership.
+func DeriveIPv6Addr(nodeID NodeID, roomKey RoomKey) (netip.Addr, error) {
 	ula, err := netip.ParseAddr(IPv6ULA)
 	if err != nil {
 		return netip.Addr{}, fmt.Errorf("invalid ULA prefix %q: %w", IPv6ULA, err)
 	}
-	// Construct a full 128-bit address from the ULA prefix + host suffix.
-	// ULA prefix occupies the first 80 bits (fd00:9bd8::/64 means 64 network bits
-	// + 16 bits of subnet; we use the first 8 bytes of the prefix and append
-	// 6 bytes from the hash, zero-filling the remaining bytes to reach 16 bytes).
+	d := roomKey.saltedDigest(nodeID)
+
 	var addr [16]byte
 	raw := ula.AsSlice()
 	copy(addr[:8], raw[:8])
-	// Set the Universal/Local and Individual/Group bits per RFC 4291 §2.5.1
-	// for the modified EUI-64 style (not strictly necessary for ULA, but
-	// conventional): flip bit 6 of the first suffix byte.
-	copy(addr[10:], h[:6])
+	// Interface identifier: 6 bytes from the salted digest. The remaining two
+	// bytes of the suffix stay zero so addresses stay inside a /64 and are easy
+	// to read in logs.
+	copy(addr[10:], d[:6])
+	// Flip the universal/local bit (RFC 4291 §2.5.1) as a conventional marker
+	// that this identifier is not derived from a hardware MAC.
 	addr[8] |= 0x02
 	return netip.AddrFrom16(addr), nil
 }

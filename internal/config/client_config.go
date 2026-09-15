@@ -28,6 +28,10 @@ type ClientConfig struct {
 	// [tunnel]
 	TunnelMTU   int
 	KCPWindow   int
+	// AllowUnreliableFallback permits degrading a KCP tunnel to raw UDP when
+	// KCP is judged failed (invariant I6: "降级不静默"). When false the tunnel
+	// fails loudly instead of silently losing reliability.
+	AllowUnreliableFallback bool
 
 	// [network]
 	NetworkCIDR string
@@ -62,6 +66,8 @@ func DefaultClientConfig() *ClientConfig {
 		PredictParallel: 256,
 		TunnelMTU:      1280,
 		KCPWindow:      256,
+		// I6: no silent degradation by default. Operators must opt in.
+		AllowUnreliableFallback: false,
 		NetworkCIDR:    "fd00:9bd8::/64",
 		PortControlPolicy: "deny",
 		PortControlDB:  "portcontrol.db",
@@ -96,6 +102,7 @@ func LoadClientConfig(path string) (*ClientConfig, error) {
 
 	cfg.TunnelMTU = GetInt(m, "tunnel", "mtu", cfg.TunnelMTU)
 	cfg.KCPWindow = GetInt(m, "tunnel", "kcp_window", cfg.KCPWindow)
+	cfg.AllowUnreliableFallback = GetBool(m, "tunnel", "allow_unreliable_fallback", cfg.AllowUnreliableFallback)
 
 	cfg.NetworkCIDR = GetString(m, "network", "cidr", cfg.NetworkCIDR)
 

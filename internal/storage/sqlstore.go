@@ -1,9 +1,11 @@
 package storage
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	_ "embed"
+	"errors"
 	"fmt"
 	"time"
 
@@ -99,12 +101,35 @@ func (s *SQLStore) rebind(query string) string {
 
 // --- Nodes ---
 
+// RegisterNode binds a NodeID to a public key.
+//
+// Invariant I8: if the ID is already bound to a *different* key, the attempt is
+// rejected with ErrNodeIDConflict instead of overwriting. Without this check an
+// attacker who guesses a victim's NodeID (which is derived from non-secret
+// machine fingerprints) could take over the record by re-registering.
 func (s *SQLStore) RegisterNode(ctx context.Context, n *Node) error {
-	_, err := s.db.ExecContext(ctx, s.rebind(`
+	// Look up any existing binding for this ID.
+	var existing struct {
+		PubKey []byte `db:"pubkey"`
+	}
+	err := s.db.GetContext(ctx, &existing, s.rebind(
+		`SELECT pubkey FROM nodes WHERE id = ?`), n.ID.String())
+	switch {
+	case err == nil:
+		// ID exists: the key must match, otherwise refuse.
+		if !bytes.Equal(existing.PubKey, n.PubKey) {
+			return fmt.Errorf("%w: %s", ErrNodeIDConflict, n.ID)
+		}
+	case errors.Is(err, sql.ErrNoRows):
+		// New node — fall through to insert.
+	default:
+		return fmt.Errorf("look up node %s: %w", n.ID, err)
+	}
+
+	_, err = s.db.ExecContext(ctx, s.rebind(`
 		INSERT INTO nodes (id, pubkey, room_id, ipv6_addr, ipv4_addr, public_addr, nat_type, status, created_at, last_seen)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT(id) DO UPDATE SET
-			pubkey = excluded.pubkey,
 			room_id = excluded.room_id,
 			ipv6_addr = excluded.ipv6_addr,
 			ipv4_addr = excluded.ipv4_addr,
@@ -169,6 +194,23 @@ func (s *SQLStore) UpdateNodeStatus(ctx context.Context, id string, status NodeS
 func (s *SQLStore) DeleteNode(ctx context.Context, id string) error {
 	_, err := s.db.ExecContext(ctx, s.rebind(`DELETE FROM nodes WHERE id = ?`), id)
 	return err
+}
+
+// UnbindNodeID releases the NodeID↔pubkey binding (D5).
+//
+// The row is deleted rather than the key nulled so the next registration is a
+// clean first-use bind. Deleting the node also drops its room membership and
+// port rules via the ON DELETE CASCADE constraints, which is the intended
+// semantics: an unbound identity owns nothing.
+func (s *SQLStore) UnbindNodeID(ctx context.Context, id string) error {
+	res, err := s.db.ExecContext(ctx, s.rebind(`DELETE FROM nodes WHERE id = ?`), id)
+	if err != nil {
+		return fmt.Errorf("unbind node %s: %w", id, err)
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return fmt.Errorf("unbind node %s: %w", id, sql.ErrNoRows)
+	}
+	return nil
 }
 
 // --- Rooms ---

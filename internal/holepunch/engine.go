@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"net"
 	"sync"
+	"time"
+
+	"github.com/yourorg/go-p2pmesh/pkg/types"
 )
 
 // ErrNotImplemented is returned by all methods in P0.
@@ -49,9 +52,47 @@ func (e *Engine) Punch(targetInfo *PeerInfo) (*PunchResult, error) {
 
 // PeerInfo holds the information about the remote peer needed for punching.
 type PeerInfo struct {
-	NodeID     string
-	IPv6       string
-	PublicAddr string
-	NATType    string
+	NodeID string
+	// RoomID is the room the peer belongs to. Rule R1 (see priority.go) uses it
+	// to order candidates: same-room peers are attempted first.
+	RoomID types.RoomID
+	// JoinedAt orders peers within the same room. The zero value is fine for
+	// peers whose join time is unknown; NodeID then decides the order.
+	JoinedAt     time.Time
+	IPv6         string
+	PublicAddr   string
+	NATType      string
 	PredictRange [2]int // [start, end] predicted port range
+}
+
+// PunchStats counts outcomes separately per R1 group.
+//
+// The split is deliberate: the design requires that out-of-room attempts are
+// counted apart from same-room ones, because averaging them would let an
+// invariant-I7 failure (cross-room addresses becoming usable) hide inside a
+// healthy-looking overall success rate.
+type PunchStats struct {
+	SameRoomAttempted  int
+	SameRoomSucceeded  int
+	OtherRoomAttempted int
+	OtherRoomSucceeded int
+}
+
+// SuccessRate returns the same-room success ratio, or 0 when nothing was tried.
+func (s PunchStats) SuccessRate() float64 {
+	if s.SameRoomAttempted == 0 {
+		return 0
+	}
+	return float64(s.SameRoomSucceeded) / float64(s.SameRoomAttempted)
+}
+
+// OtherRoomAttemptRate reports what fraction of attempts left the room. A
+// non-zero value with no same-room failures to explain it suggests I7 is not
+// being enforced.
+func (s PunchStats) OtherRoomAttemptRate() float64 {
+	total := s.SameRoomAttempted + s.OtherRoomAttempted
+	if total == 0 {
+		return 0
+	}
+	return float64(s.OtherRoomAttempted) / float64(total)
 }
