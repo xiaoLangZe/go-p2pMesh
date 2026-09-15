@@ -1,0 +1,285 @@
+package storage
+
+import (
+	"context"
+	"database/sql"
+	_ "embed"
+	"fmt"
+	"time"
+
+	"github.com/jmoiron/sqlx"
+	"github.com/yourorg/go-p2pmesh/pkg/types"
+
+	// Pure-Go SQLite driver (no CGO required).
+	_ "modernc.org/sqlite"
+)
+
+//go:embed migrations/001_init.sql
+var migrationSQL string
+
+// SQLStore implements Store using database/sql + sqlx.
+// It works with SQLite (via modernc.org/sqlite), MySQL, and PostgreSQL.
+// All queries use parameter binding — no string concatenation is permitted.
+type SQLStore struct {
+	db *sqlx.DB
+	// placeholderStyle controls the bind parameter style:
+	//   "?" for SQLite/MySQL, "$1" for PostgreSQL.
+	placeholder string
+}
+
+// NewSQLStore creates a new SQL-backed store.
+// driverName must be one of: "sqlite", "mysql", "postgres".
+func NewSQLStore(driverName, dsn string, maxOpen, maxIdle int) (*SQLStore, error) {
+	var db *sqlx.DB
+	var err error
+	var placeholder string
+
+	switch driverName {
+	case "sqlite":
+		db, err = sqlx.Connect("sqlite", dsn)
+		placeholder = "?"
+	case "mysql":
+		db, err = sqlx.Connect("mysql", dsn)
+		placeholder = "?"
+	case "postgresql", "postgres", "pgx":
+		db, err = sqlx.Connect("pgx", dsn)
+		placeholder = "$1"
+	default:
+		return nil, fmt.Errorf("unsupported SQL driver %q", driverName)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("connect %s: %w", driverName, err)
+	}
+
+	db.SetMaxOpenConns(maxOpen)
+	db.SetMaxIdleConns(maxIdle)
+	db.SetConnMaxLifetime(30 * time.Minute)
+
+	s := &SQLStore{db: db, placeholder: placeholder}
+	if err := s.migrate(); err != nil {
+		return nil, fmt.Errorf("migrate: %w", err)
+	}
+	return s, nil
+}
+
+// migrate executes embedded migration SQL.
+func (s *SQLStore) migrate() error {
+	// SQLite supports executing the full script in one Exec call.
+	// MySQL/PostgreSQL may need statement-by-statement execution.
+	_, err := s.db.Exec(migrationSQL)
+	return err
+}
+
+// rebind translates "?" placeholders to the driver-specific style.
+func (s *SQLStore) rebind(query string) string {
+	if s.placeholder == "?" {
+		return query
+	}
+	return s.db.Rebind(query)
+}
+
+// --- Nodes ---
+
+func (s *SQLStore) RegisterNode(ctx context.Context, n *Node) error {
+	_, err := s.db.ExecContext(ctx, s.rebind(`
+		INSERT INTO nodes (id, pubkey, room_id, ipv6_addr, public_addr, nat_type, status, created_at, last_seen)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT(id) DO UPDATE SET
+			pubkey = excluded.pubkey,
+			room_id = excluded.room_id,
+			ipv6_addr = excluded.ipv6_addr,
+			public_addr = excluded.public_addr,
+			nat_type = excluded.nat_type,
+			status = excluded.status,
+			last_seen = excluded.last_seen`),
+		n.ID.String(), n.PubKey, n.RoomID, n.IPv6Addr, n.PublicAddr,
+		n.NATType, string(n.Status), time.Now().UTC(), time.Now().UTC())
+	return err
+}
+
+func (s *SQLStore) GetNode(ctx context.Context, id string) (*Node, error) {
+	var n Node
+	err := s.db.GetContext(ctx, &n, s.rebind(`
+		SELECT id, pubkey, room_id, ipv6_addr, public_addr, nat_type, status, created_at, last_seen
+		FROM nodes WHERE id = ?`), id)
+	if err != nil {
+		return nil, err
+	}
+	n.ID = types.NodeID(n.ID.String())
+	return &n, nil
+}
+
+func (s *SQLStore) ListNodes(ctx context.Context, filter NodeFilter) ([]*Node, error) {
+	query := `SELECT id, pubkey, room_id, ipv6_addr, public_addr, nat_type, status, created_at, last_seen FROM nodes`
+	args := []interface{}{}
+	if filter.RoomID != "" {
+		query += ` WHERE room_id = ?`
+		args = append(args, filter.RoomID)
+	}
+	if filter.Status != "" {
+		if len(args) > 0 {
+			query += ` AND`
+		} else {
+			query += ` WHERE`
+		}
+		query += ` status = ?`
+		args = append(args, string(filter.Status))
+	}
+	query += ` ORDER BY created_at DESC`
+	if filter.Limit > 0 {
+		query += ` LIMIT ?`
+		args = append(args, filter.Limit)
+	}
+	if filter.Offset > 0 {
+		query += ` OFFSET ?`
+		args = append(args, filter.Offset)
+	}
+	var nodes []*Node
+	err := s.db.SelectContext(ctx, &nodes, s.rebind(query), args...)
+	return nodes, err
+}
+
+func (s *SQLStore) UpdateNodeStatus(ctx context.Context, id string, status NodeStatus) error {
+	_, err := s.db.ExecContext(ctx, s.rebind(`
+		UPDATE nodes SET status = ?, last_seen = ? WHERE id = ?`),
+		string(status), time.Now().UTC(), id)
+	return err
+}
+
+func (s *SQLStore) DeleteNode(ctx context.Context, id string) error {
+	_, err := s.db.ExecContext(ctx, s.rebind(`DELETE FROM nodes WHERE id = ?`), id)
+	return err
+}
+
+// --- Rooms ---
+
+func (s *SQLStore) CreateRoom(ctx context.Context, r *types.Room) error {
+	_, err := s.db.ExecContext(ctx, s.rebind(`
+		INSERT INTO rooms (id, name, owner_id, encrypted, max_members, created_at)
+		VALUES (?, ?, ?, ?, ?, ?)`),
+		string(r.ID), r.Name, string(r.OwnerID), r.Encrypted, r.MaxMembers, time.Now().UTC())
+	return err
+}
+
+func (s *SQLStore) GetRoom(ctx context.Context, id string) (*types.Room, error) {
+	var r types.Room
+	err := s.db.GetContext(ctx, &r, s.rebind(`
+		SELECT id, name, owner_id, encrypted, max_members, created_at
+		FROM rooms WHERE id = ?`), id)
+	if err != nil {
+		return nil, err
+	}
+	r.ID = types.RoomID(r.ID)
+	r.OwnerID = types.NodeID(r.OwnerID)
+	return &r, nil
+}
+
+func (s *SQLStore) ListRooms(ctx context.Context) ([]*types.Room, error) {
+	var rooms []*types.Room
+	err := s.db.SelectContext(ctx, &rooms, `SELECT id, name, owner_id, encrypted, max_members, created_at FROM rooms ORDER BY created_at DESC`)
+	return rooms, err
+}
+
+func (s *SQLStore) AddRoomMember(ctx context.Context, roomID, nodeID string) error {
+	_, err := s.db.ExecContext(ctx, s.rebind(`
+		INSERT INTO room_members (room_id, node_id, joined_at) VALUES (?, ?, ?)
+		ON CONFLICT(room_id, node_id) DO NOTHING`),
+		roomID, nodeID, time.Now().UTC())
+	return err
+}
+
+func (s *SQLStore) RemoveRoomMember(ctx context.Context, roomID, nodeID string) error {
+	_, err := s.db.ExecContext(ctx, s.rebind(`DELETE FROM room_members WHERE room_id = ? AND node_id = ?`),
+		roomID, nodeID)
+	return err
+}
+
+func (s *SQLStore) ListRoomMembers(ctx context.Context, roomID string) ([]*Node, error) {
+	var nodes []*Node
+	err := s.db.SelectContext(ctx, &nodes, s.rebind(`
+		SELECT n.id, n.pubkey, n.room_id, n.ipv6_addr, n.public_addr, n.nat_type, n.status, n.created_at, n.last_seen
+		FROM nodes n
+		JOIN room_members rm ON rm.node_id = n.id
+		WHERE rm.room_id = ? AND n.status = ?`),
+		roomID, string(NodeStatusOnline))
+	return nodes, err
+}
+
+// --- Port rules ---
+
+func (s *SQLStore) SetPortRule(ctx context.Context, rule *PortRule) error {
+	_, err := s.db.ExecContext(ctx, s.rebind(`
+		INSERT INTO port_rules (id, node_id, protocol, local_port, virtual_port, description, enabled, created_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT(id) DO UPDATE SET
+			protocol = excluded.protocol,
+			local_port = excluded.local_port,
+			virtual_port = excluded.virtual_port,
+			description = excluded.description,
+			enabled = excluded.enabled`),
+		rule.ID, rule.NodeID, rule.Protocol, rule.LocalPort,
+		rule.VirtualPort, rule.Description, rule.Enabled, time.Now().UTC())
+	return err
+}
+
+func (s *SQLStore) GetPortRules(ctx context.Context, nodeID string) ([]*PortRule, error) {
+	var rules []*PortRule
+	err := s.db.SelectContext(ctx, &rules, s.rebind(`
+		SELECT id, node_id, protocol, local_port, virtual_port, description, enabled, created_at
+		FROM port_rules WHERE node_id = ? AND enabled = TRUE
+		ORDER BY virtual_port`), nodeID)
+	return rules, err
+}
+
+func (s *SQLStore) DeletePortRule(ctx context.Context, ruleID string) error {
+	_, err := s.db.ExecContext(ctx, s.rebind(`DELETE FROM port_rules WHERE id = ?`), ruleID)
+	return err
+}
+
+// --- API users ---
+
+func (s *SQLStore) CreateAPIUser(ctx context.Context, u *APIUser) error {
+	_, err := s.db.ExecContext(ctx, s.rebind(`
+		INSERT INTO api_users (id, username, password_hash, role, created_at)
+		VALUES (?, ?, ?, ?, ?)`),
+		u.ID, u.Username, u.PasswordHash, u.Role, time.Now().UTC())
+	return err
+}
+
+func (s *SQLStore) GetAPIUser(ctx context.Context, username string) (*APIUser, error) {
+	var u APIUser
+	err := s.db.GetContext(ctx, &u, s.rebind(`
+		SELECT id, username, password_hash, role, created_at, last_login
+		FROM api_users WHERE username = ?`), username)
+	if err != nil {
+		return nil, err
+	}
+	return &u, nil
+}
+
+func (s *SQLStore) RevokeAPIToken(ctx context.Context, tokenID string) error {
+	_, err := s.db.ExecContext(ctx, s.rebind(`UPDATE api_tokens SET revoked = TRUE WHERE id = ?`), tokenID)
+	return err
+}
+
+// Close closes the database connection.
+func (s *SQLStore) Close() error {
+	if s.db != nil {
+		return s.db.Close()
+	}
+	return nil
+}
+
+// Ping checks database connectivity.
+func (s *SQLStore) Ping() error {
+	return s.db.Ping()
+}
+
+// DB returns the underlying sqlx.DB for advanced use.
+func (s *SQLStore) DB() *sqlx.DB { return s.db }
+
+// Ensure *SQLStore satisfies the Store interface at compile time.
+var _ Store = (*SQLStore)(nil)
+
+// Ensure *sql.NullString is handled (used for nullable fields in scans).
+var _ = sql.NullString{}

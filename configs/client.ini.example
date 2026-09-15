@@ -1,0 +1,45 @@
+[client]
+; Bootstrap server addresses (comma-separated, auto-selects lowest latency)
+bootstrap = 203.0.113.10:29683
+; Sub-server listen port for other clients to connect through (0 = disabled)
+listen_port = 0
+; Node ID (auto-generated and persisted if empty)
+node_id =
+
+[room]
+; Room to join on startup (optional)
+auto_join =
+; Room key for end-to-end encryption (optional)
+room_key =
+
+[stun]
+; Third-party public STUN servers
+servers = stun.l.google.com:19302,stun1.l.google.com:19302,stun2.l.google.com:19302,stun.cloudflare.com:3478
+timeout_ms = 3000
+predict_samples = 8
+ipv6 = true
+
+[holepunch]
+predict_window = 64
+predict_parallel = 256
+turn = false
+turn_addr =
+
+[tunnel]
+mtu = 1280
+kcp_window = 256
+
+[network]
+cidr = fd00:9bd8::/64
+
+[portcontrol]
+; default policy: deny = reject all unconfigured ports, allow = permit all
+default_policy = deny
+db_file = portcontrol.db
+
+[identity]
+key_file = identity.key
+
+[log]
+level = info
+file =

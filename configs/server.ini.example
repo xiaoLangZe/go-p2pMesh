@@ -1,0 +1,55 @@
+[server]
+host = 0.0.0.0
+port = 29683
+; Other bootstrap servers for mesh sync (comma-separated)
+; mesh_peers = 203.0.113.20:29683
+
+[api]
+enabled = true
+host = 0.0.0.0
+port = 29684
+; HTTPS certificate and key
+cert_file = server.crt
+key_file  = server.key
+; mTLS client certificate CA (recommended)
+client_ca_file = clients_ca.crt
+; JWT signing secret (auto-generated on first start if empty)
+jwt_secret =
+token_ttl_hours = 24
+; Initial admin user (created on first start)
+admin_user = admin
+; Leave empty to auto-generate a random password on first start
+admin_password =
+
+[database]
+; type: mysql | postgresql | sqlite | mongodb
+type = sqlite
+; SQLite example
+dsn = data/gop2pmesh.db
+; MySQL example
+; type = mysql
+; dsn = gop2pmesh:password@tcp(127.0.0.1:3306)/gop2pmesh?parseTime=true
+; PostgreSQL example
+; type = postgresql
+; dsn = postgres://gop2pmesh:password@127.0.0.1:5432/gop2pmesh
+; MongoDB example
+; type = mongodb
+; dsn = mongodb://gop2pmesh:password@127.0.0.1:27017
+; database = gop2pmesh
+max_open_conns = 50
+max_idle_conns = 10
+
+[network]
+; Internal IPv6 ULA prefix
+cidr = fd00:9bd8::/64
+
+[security]
+; Root key for signing node certificates (auto-generated on first start)
+root_key_file = root.key
+; Trust on first use (for offline/self-hosted scenarios)
+trust_on_first_use = false
+node_timeout = 90s
+
+[log]
+level = info
+file =
