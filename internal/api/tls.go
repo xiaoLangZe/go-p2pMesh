@@ -43,8 +43,8 @@ func BuildTLSConfig(certFile, keyFile, clientCAFile string) (*tls.Config, error)
 
 // tokenLifetimes are the §9.1 #2 defaults: access 24h, refresh 7d.
 const (
-	DefaultAccessTTL   = 24 * time.Hour
-	DefaultRefreshTTL  = 7 * 24 * time.Hour
+	DefaultAccessTTL  = 24 * time.Hour
+	DefaultRefreshTTL = 7 * 24 * time.Hour
 )
 
 // loginRatePerMin is the §9.1 #6 hard target.

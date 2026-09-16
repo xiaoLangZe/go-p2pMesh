@@ -2,9 +2,10 @@
 // for the go-p2pmesh control plane.
 //
 // Messages use a simple length-prefixed binary format:
-//   [4 bytes: message type (big-endian uint32)]
-//   [4 bytes: payload length (big-endian uint32)]
-//   [N bytes: JSON-encoded payload]
+//
+//	[4 bytes: message type (big-endian uint32)]
+//	[4 bytes: payload length (big-endian uint32)]
+//	[N bytes: JSON-encoded payload]
 //
 // This avoids the need for protoc/protobuf code generation; the protocol
 // framing was completed in the P1 baseline.
@@ -23,19 +24,19 @@ import (
 type MessageType uint32
 
 const (
-	MsgHello       MessageType = 1 // C→S: client announces itself
-	MsgChallenge   MessageType = 2 // S→C: server sends challenge + server table
-	MsgAuth        MessageType = 3 // C→S: Noise handshake response
-	MsgAuthOK      MessageType = 4 // S→C: auth success, IPv6 assigned
-	MsgNATProbe    MessageType = 5 // C→S: client reports NAT detection results
-	MsgNATResult   MessageType = 6 // S→C: server confirms NAT info to peers
-	MsgPunchReq    MessageType = 7 // C→S: request punch info for a target
-	MsgPunchInfo   MessageType = 8 // S→C: target's public addr + NAT type + predict range
-	MsgKeepalive   MessageType = 9 // C↔S: heartbeat
-	MsgPeerList    MessageType = 10 // S→C: periodic online node list
-	MsgRoomMembers MessageType = 11 // S→C: room member list push
-	MsgRoomJoin    MessageType = 12 // C→S: join a room
-	MsgRoomLeave   MessageType = 13 // C→S: leave a room
+	MsgHello        MessageType = 1  // C→S: client announces itself
+	MsgChallenge    MessageType = 2  // S→C: server sends challenge + server table
+	MsgAuth         MessageType = 3  // C→S: Noise handshake response
+	MsgAuthOK       MessageType = 4  // S→C: auth success, IPv6 assigned
+	MsgNATProbe     MessageType = 5  // C→S: client reports NAT detection results
+	MsgNATResult    MessageType = 6  // S→C: server confirms NAT info to peers
+	MsgPunchReq     MessageType = 7  // C→S: request punch info for a target
+	MsgPunchInfo    MessageType = 8  // S→C: target's public addr + NAT type + predict range
+	MsgKeepalive    MessageType = 9  // C↔S: heartbeat
+	MsgPeerList     MessageType = 10 // S→C: periodic online node list
+	MsgRoomMembers  MessageType = 11 // S→C: room member list push
+	MsgRoomJoin     MessageType = 12 // C→S: join a room
+	MsgRoomLeave    MessageType = 13 // C→S: leave a room
 	MsgPortRuleSync MessageType = 14 // S→C: port rules push to client
 )
 
@@ -81,9 +82,9 @@ func ChallengePayload(nonce []byte, nodeID string) []byte {
 
 // Challenge is sent by the server with a nonce and server table snapshot.
 type Challenge struct {
-	Nonce      []byte         `json:"nonce"`
-	ServerCert []byte         `json:"server_cert"`
-	Servers    []ServerEntry  `json:"servers"`
+	Nonce      []byte        `json:"nonce"`
+	ServerCert []byte        `json:"server_cert"`
+	Servers    []ServerEntry `json:"servers"`
 }
 
 // ServerEntry is one entry in the server table.
@@ -117,11 +118,11 @@ type AuthOK struct {
 
 // NATProbe reports the client's NAT detection results.
 type NATProbe struct {
-	NodeID      string `json:"node_id"`
-	NATType     string `json:"nat_type"`
-	PublicAddr  string `json:"public_addr"`
+	NodeID       string `json:"node_id"`
+	NATType      string `json:"nat_type"`
+	PublicAddr   string `json:"public_addr"`
 	PublicV6Addr string `json:"public_v6_addr,omitempty"`
-	PortSamples []int  `json:"port_samples,omitempty"` // symmetric port prediction data
+	PortSamples  []int  `json:"port_samples,omitempty"` // symmetric port prediction data
 }
 
 // NATResult confirms NAT info and may relay peer's NAT info.
@@ -138,11 +139,11 @@ type PunchReq struct {
 
 // PunchInfo carries the target's public address and prediction data.
 type PunchInfo struct {
-	TargetNodeID  string `json:"target_node_id"`
-	PublicAddr    string `json:"public_addr"`
-	NATType       string `json:"nat_type"`
-	PredictRange  [2]int `json:"predict_range"` // [start, end]
-	FireAt        int64  `json:"fire_at"`       // Unix timestamp for synchronized firing
+	TargetNodeID string `json:"target_node_id"`
+	PublicAddr   string `json:"public_addr"`
+	NATType      string `json:"nat_type"`
+	PredictRange [2]int `json:"predict_range"` // [start, end]
+	FireAt       int64  `json:"fire_at"`       // Unix timestamp for synchronized firing
 }
 
 // Keepalive is a simple heartbeat.
@@ -167,8 +168,8 @@ type PeerEntry struct {
 
 // RoomMembers pushes the member list of a room.
 type RoomMembers struct {
-	RoomID  string       `json:"room_id"`
-	Members []PeerEntry  `json:"members"`
+	RoomID  string      `json:"room_id"`
+	Members []PeerEntry `json:"members"`
 }
 
 // RoomJoin requests to join a room.

@@ -19,8 +19,8 @@ import (
 )
 
 const (
-	ruleSQLConcat = "SQL_CONCAT"  // fmt.Sprintf / + used to build SQL
-	ruleSQLInterp = "SQL_INTERP"  // user value interpolated into SQL text
+	ruleSQLConcat = "SQL_CONCAT" // fmt.Sprintf / + used to build SQL
+	ruleSQLInterp = "SQL_INTERP" // user value interpolated into SQL text
 )
 
 type finding struct {

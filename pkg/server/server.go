@@ -27,12 +27,12 @@ import (
 // Server is the top-level server instance.  It owns all subsystems
 // (config, storage, API, mesh, rooms, crypto, logger).
 type Server struct {
-	mu       sync.Mutex
-	cfg      *Config
-	logger   *slog.Logger
-	started  bool
-	cancel   context.CancelFunc
-	wg       sync.WaitGroup
+	mu      sync.Mutex
+	cfg     *Config
+	logger  *slog.Logger
+	started bool
+	cancel  context.CancelFunc
+	wg      sync.WaitGroup
 
 	store    storage.Store
 	bootSrv  *bootstrap.Server

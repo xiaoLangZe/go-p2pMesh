@@ -145,7 +145,7 @@ func BuildReply(q *Query, ips []net.IP) []byte {
 	hdr := make([]byte, 12)
 	binary.BigEndian.PutUint16(hdr[0:2], q.ID)
 	binary.BigEndian.PutUint16(hdr[2:4], flags)
-	binary.BigEndian.PutUint16(hdr[4:6], 1)             // QDCOUNT
+	binary.BigEndian.PutUint16(hdr[4:6], 1)                    // QDCOUNT
 	binary.BigEndian.PutUint16(hdr[6:8], uint16(len(answers))) // ANCOUNT
 
 	// Question section: the original name uncompressed.

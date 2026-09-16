@@ -148,9 +148,9 @@ type apiError struct {
 }
 
 type apiResponse struct {
-	OK    bool                    `json:"ok"`
-	Data  interface{}             `json:"data,omitempty"`
-	Error *apiError               `json:"error,omitempty"`
+	OK    bool        `json:"ok"`
+	Data  interface{} `json:"data,omitempty"`
+	Error *apiError   `json:"error,omitempty"`
 }
 
 func writeJSON(w http.ResponseWriter, status int, v interface{}) {

@@ -40,13 +40,13 @@ type Server struct {
 
 // clientConn wraps a single accepted client connection.
 type clientConn struct {
-	conn  net.Conn
+	conn   net.Conn
 	nodeID types.NodeID
 	pubKey []byte
-	nonce []byte // challenge nonce issued to this client, awaiting proof
-	r     *bufio.Reader
-	w     *bufio.Writer
-	mu    sync.Mutex
+	nonce  []byte // challenge nonce issued to this client, awaiting proof
+	r      *bufio.Reader
+	w      *bufio.Writer
+	mu     sync.Mutex
 }
 
 // NewServer creates a bootstrap Server bound to addr ("host:port").
@@ -358,8 +358,8 @@ func (c *Client) Connect(ctx context.Context) error {
 // SendHello sends a HELLO message with the node's identity.
 func (c *Client) SendHello(nodeID types.NodeID, pubKey []byte) error {
 	return c.send(protocol.MsgHello, protocol.Hello{
-		NodeID: nodeID.String(),
-		PubKey: pubKey,
+		NodeID:  nodeID.String(),
+		PubKey:  pubKey,
 		Version: "0.1.0",
 	})
 }
@@ -367,9 +367,9 @@ func (c *Client) SendHello(nodeID types.NodeID, pubKey []byte) error {
 // SendNATProbe sends the NAT detection results to the server.
 func (c *Client) SendNATProbe(natType, publicAddr string, portSamples []int) error {
 	return c.send(protocol.MsgNATProbe, protocol.NATProbe{
-		NodeID:     "", // server already knows from hello
-		NATType:    natType,
-		PublicAddr: publicAddr,
+		NodeID:      "", // server already knows from hello
+		NATType:     natType,
+		PublicAddr:  publicAddr,
 		PortSamples: portSamples,
 	})
 }

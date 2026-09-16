@@ -133,7 +133,7 @@ func (c *Controller) SelfCheck(opts StartupOptions, local LocalNets) error {
 			}
 			if h.Overlaps(mesh) {
 				return fmt.Errorf(
-					"mesh subnet %s collides with host interface %s; routes would " +
+					"mesh subnet %s collides with host interface %s; routes would "+
 						"black-hole that local network", mesh, h)
 			}
 		}

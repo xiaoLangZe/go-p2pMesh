@@ -12,9 +12,9 @@ import (
 // a byte slice suitable for hashing into a NodeID.
 //
 // The fallback chain (per platform):
-//   1. OS machine ID (see machineid_*.go)
-//   2. Hostname
-//   3. OS type + CPU architecture
+//  1. OS machine ID (see machineid_*.go)
+//  2. Hostname
+//  3. OS type + CPU architecture
 func CollectFingerprint() ([]byte, error) {
 	var buf []byte
 

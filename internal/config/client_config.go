@@ -5,19 +5,19 @@ import "fmt"
 // ClientConfig holds all configuration values for the client binary.
 type ClientConfig struct {
 	// [client]
-	Bootstrap   []string
-	ListenPort  int
-	NodeID      string
+	Bootstrap  []string
+	ListenPort int
+	NodeID     string
 
 	// [room]
-	AutoJoin    string
-	RoomKey     string
+	AutoJoin string
+	RoomKey  string
 
 	// [stun]
-	StunServers  []string
-	StunTimeout  int // milliseconds
+	StunServers    []string
+	StunTimeout    int // milliseconds
 	PredictSamples int
-	StunIPv6     bool
+	StunIPv6       bool
 
 	// [holepunch]
 	PredictWindow   int
@@ -26,8 +26,8 @@ type ClientConfig struct {
 	TurnAddr        string
 
 	// [tunnel]
-	TunnelMTU   int
-	KCPWindow   int
+	TunnelMTU int
+	KCPWindow int
 	// AllowUnreliableFallback permits degrading a KCP tunnel to raw UDP when
 	// KCP is judged failed (invariant I6: "降级不静默"). When false the tunnel
 	// fails loudly instead of silently losing reliability.
@@ -51,7 +51,7 @@ type ClientConfig struct {
 // DefaultClientConfig returns the client configuration with default values.
 func DefaultClientConfig() *ClientConfig {
 	return &ClientConfig{
-		Bootstrap: []string{},
+		Bootstrap:  []string{},
 		ListenPort: 0,
 		StunServers: []string{
 			"stun.l.google.com:19302",
@@ -59,20 +59,20 @@ func DefaultClientConfig() *ClientConfig {
 			"stun2.l.google.com:19302",
 			"stun.cloudflare.com:3478",
 		},
-		StunTimeout:    3000,
-		PredictSamples: 8,
-		StunIPv6:       true,
-		PredictWindow:  64,
+		StunTimeout:     3000,
+		PredictSamples:  8,
+		StunIPv6:        true,
+		PredictWindow:   64,
 		PredictParallel: 256,
-		TunnelMTU:      1280,
-		KCPWindow:      256,
+		TunnelMTU:       1280,
+		KCPWindow:       256,
 		// I6: no silent degradation by default. Operators must opt in.
 		AllowUnreliableFallback: false,
-		NetworkCIDR:    "fd00:9bd8::/64",
-		PortControlPolicy: "deny",
-		PortControlDB:  "portcontrol.db",
-		KeyFile:        "identity.key",
-		LogLevel:       "info",
+		NetworkCIDR:             "fd00:9bd8::/64",
+		PortControlPolicy:       "deny",
+		PortControlDB:           "portcontrol.db",
+		KeyFile:                 "identity.key",
+		LogLevel:                "info",
 	}
 }
 

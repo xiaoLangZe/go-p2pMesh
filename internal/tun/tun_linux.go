@@ -11,7 +11,7 @@ import (
 
 // LinuxTUN wraps a /dev/net/tun file descriptor.
 type LinuxTUN struct {
-	f   *os.File
+	f    *os.File
 	name string
 	mtu  int
 }

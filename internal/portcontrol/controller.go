@@ -40,10 +40,10 @@ const (
 
 // Controller manages port access rules and virtual port mapping.
 type Controller struct {
-	mu       sync.RWMutex
-	rules    map[int]*PortRule // keyed by virtual port
-	local    map[int]*PortRule // keyed by local port
-	policy   Policy
+	mu     sync.RWMutex
+	rules  map[int]*PortRule // keyed by virtual port
+	local  map[int]*PortRule // keyed by local port
+	policy Policy
 }
 
 // NewController creates a Controller with the given default policy.

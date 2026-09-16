@@ -70,7 +70,7 @@ type RateLimitMiddleware struct {
 	APIUserBurst int
 	Now          func() time.Time
 
-	ipLimits  sync.Map // ip -> *tokenBucketLimiter
+	ipLimits   sync.Map // ip -> *tokenBucketLimiter
 	userLimits sync.Map // subject -> *tokenBucketLimiter
 }
 

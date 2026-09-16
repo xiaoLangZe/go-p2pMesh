@@ -95,11 +95,11 @@ func formatSegments(raw string) string {
 // The Ed25519 key pair is used for signing; the X25519 (curve25519) key pair
 // is the Noise static key used during handshake.
 type NodeIdentity struct {
-	ID            NodeID
-	Ed25519Pub    ed25519.PublicKey
-	Ed25519Priv   ed25519.PrivateKey
-	X25519Pub     [32]byte // Noise static public key
-	X25519Priv    [32]byte // Noise static private key
+	ID          NodeID
+	Ed25519Pub  ed25519.PublicKey
+	Ed25519Priv ed25519.PrivateKey
+	X25519Pub   [32]byte // Noise static public key
+	X25519Priv  [32]byte // Noise static private key
 }
 
 // FingerprintHex returns the hex-encoded SHA-256 fingerprint of the

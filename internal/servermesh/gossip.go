@@ -8,12 +8,12 @@ package servermesh
 
 // GossipMessage represents a table update notification.
 type GossipMessage struct {
-	Type    string         // "full" | "incremental"
-	Servers []ServerEntry  // full or changed entries
+	Type    string        // "full" | "incremental"
+	Servers []ServerEntry // full or changed entries
 }
 
 // GossipEvent represents a single table change event.
 type GossipEvent struct {
-	Action string      // "add" | "remove" | "update"
+	Action string // "add" | "remove" | "update"
 	Entry  ServerEntry
 }

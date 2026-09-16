@@ -4,9 +4,9 @@
 // encrypted with Noise (ChaCha20-Poly1305) and framed by KCP for reliable
 // ordered delivery. The transport ladder (§12.1 stage two) is:
 //
-//	1. KCP (default) — reliable ordered, tunable retransmission
-//	2. Raw UDP fallback — when KCP cannot establish, per allow_unreliable_fallback
-//	3. TCP fallback — when raw UDP is also unusable
+//  1. KCP (default) — reliable ordered, tunable retransmission
+//  2. Raw UDP fallback — when KCP cannot establish, per allow_unreliable_fallback
+//  3. TCP fallback — when raw UDP is also unusable
 //
 // Per invariant I6, the fallback is never silent: the active transport is
 // visible to the caller, and allow_unreliable_fallback=false blocks step 2.
@@ -40,12 +40,12 @@ const (
 // ordering; when it is raw UDP, packets are sent as-is (unreliable); when
 // TCP, the connection's own reliability is used.
 type Tunnel struct {
-	mu       sync.Mutex
-	conn     net.Conn
-	aead     cipher.AEAD
+	mu        sync.Mutex
+	conn      net.Conn
+	aead      cipher.AEAD
 	transport Transport
-	mtu      int
-	closed   bool
+	mtu       int
+	closed    bool
 	// sendSeq is the nonce counter for outbound AEAD encryption.
 	sendSeq uint64
 	// recvWindow is a sliding window for replay protection.

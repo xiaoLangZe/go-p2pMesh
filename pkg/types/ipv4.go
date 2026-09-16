@@ -8,11 +8,11 @@ import (
 // IPv4MeshBase is the base of the virtual IPv4 mesh address space.
 //
 // We use 240.0.0.0/4 (Class E reserved, RFC 1112) because:
-//   1. It NEVER conflicts with RFC 1918 private LANs (10/8, 172.16/12, 192.168/16)
-//   2. It NEVER conflicts with CGNAT (100.64.0.0/10, RFC 6598)
-//   3. It NEVER conflicts with link-local APIPA (169.254/16)
-//   4. No real network equipment uses 240.0.0.0/4 as a LAN address
-//   5. ZeroTier uses the same approach, proving it works in practice
+//  1. It NEVER conflicts with RFC 1918 private LANs (10/8, 172.16/12, 192.168/16)
+//  2. It NEVER conflicts with CGNAT (100.64.0.0/10, RFC 6598)
+//  3. It NEVER conflicts with link-local APIPA (169.254/16)
+//  4. No real network equipment uses 240.0.0.0/4 as a LAN address
+//  5. ZeroTier uses the same approach, proving it works in practice
 //
 // The /4 prefix gives 2^28 addresses = 2^20 = 1,048,576 possible /24 subnets,
 // which is more than enough for room-based allocation.

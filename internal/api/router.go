@@ -106,12 +106,12 @@ func (s *Server) Handler() http.Handler {
 	var chain http.Handler = mux
 	chain = AuditMiddleware(s.audit)(chain)
 	rl := &RateLimitMiddleware{
-		LoginPath:     login,
-		LoginRate:     s.cfg.LoginRatePerMin,
-		LoginBurst:    s.cfg.LoginRatePerMin,
-		APIUserRate:   s.cfg.APIUserRatePerMin,
-		APIUserBurst:  s.cfg.APIUserRatePerMin / 6,
-		Now:           s.cfg.Now,
+		LoginPath:    login,
+		LoginRate:    s.cfg.LoginRatePerMin,
+		LoginBurst:   s.cfg.LoginRatePerMin,
+		APIUserRate:  s.cfg.APIUserRatePerMin,
+		APIUserBurst: s.cfg.APIUserRatePerMin / 6,
+		Now:          s.cfg.Now,
 	}
 	chain = rl.Wrap(chain)
 	chain = AuthMiddleware{

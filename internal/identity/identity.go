@@ -70,7 +70,9 @@ func Generate() (*Identity, error) {
 
 // Load reads an identity from the given file path.
 // The file format is a simple binary blob:
-//   [1 byte version] [32 bytes ed25519 priv] [32 bytes x25519 priv]
+//
+//	[1 byte version] [32 bytes ed25519 priv] [32 bytes x25519 priv]
+//
 // The public keys are derived from the private keys.
 func Load(path string) (*Identity, error) {
 	data, err := os.ReadFile(path)

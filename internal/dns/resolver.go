@@ -31,7 +31,7 @@ type View interface {
 
 // Resolver turns a qualified name inside the mesh TLD into addresses.
 type Resolver struct {
-	view    View
+	view     View
 	upstream Upstream
 }
 

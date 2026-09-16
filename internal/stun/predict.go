@@ -18,21 +18,21 @@ type PortSample struct {
 
 // PortPrediction holds the result of analysing a sequence of port samples.
 type PortPrediction struct {
-	Pattern      PortPattern
-	NextPort     int
-	WindowStart  int
-	WindowEnd    int
-	Samples      []PortSample
-	Deltas       []int
+	Pattern     PortPattern
+	NextPort    int
+	WindowStart int
+	WindowEnd   int
+	Samples     []PortSample
+	Deltas      []int
 }
 
 // PortPattern classifies the observed allocation strategy.
 type PortPattern string
 
 const (
-	PatternLinear      PortPattern = "linear"
-	PatternCyclic      PortPattern = "cyclic"
-	PatternRandom      PortPattern = "random"
+	PatternLinear       PortPattern = "linear"
+	PatternCyclic       PortPattern = "cyclic"
+	PatternRandom       PortPattern = "random"
 	PatternInsufficient PortPattern = "insufficient"
 )
 

@@ -56,20 +56,20 @@ type PortRule struct {
 
 // APIUser is a REST API user account.
 type APIUser struct {
-	ID           string `json:"id" db:"id"`
-	Username     string `json:"username" db:"username"`
-	PasswordHash string `json:"-" db:"password_hash"`
-	Role         string `json:"role" db:"role"`
-	CreatedAt    time.Time `json:"created_at" db:"created_at"`
+	ID           string     `json:"id" db:"id"`
+	Username     string     `json:"username" db:"username"`
+	PasswordHash string     `json:"-" db:"password_hash"`
+	Role         string     `json:"role" db:"role"`
+	CreatedAt    time.Time  `json:"created_at" db:"created_at"`
 	LastLogin    *time.Time `json:"last_login" db:"last_login"`
 }
 
 // NodeFilter is used to filter node listings.
 type NodeFilter struct {
-	RoomID  string
-	Status  NodeStatus
-	Limit   int
-	Offset  int
+	RoomID string
+	Status NodeStatus
+	Limit  int
+	Offset int
 }
 
 // DatabaseConfig holds the configuration needed to create a Store.
@@ -132,22 +132,40 @@ var ErrNodeIDConflict = fmt.Errorf("node id already bound to a different public 
 // noopStore is a Store that returns ErrNotImplemented for every method.
 type noopStore struct{}
 
-func (noopStore) RegisterNode(ctx context.Context, n *Node) error                 { return ErrNotImplemented }
-func (noopStore) GetNode(ctx context.Context, id string) (*Node, error)            { return nil, ErrNotImplemented }
-func (noopStore) ListNodes(ctx context.Context, f NodeFilter) ([]*Node, error)      { return nil, ErrNotImplemented }
-func (noopStore) UpdateNodeStatus(ctx context.Context, id string, s NodeStatus) error { return ErrNotImplemented }
-func (noopStore) DeleteNode(ctx context.Context, id string) error                   { return ErrNotImplemented }
-func (noopStore) UnbindNodeID(ctx context.Context, id string) error                { return ErrNotImplemented }
-func (noopStore) CreateRoom(ctx context.Context, r *types.Room) error              { return ErrNotImplemented }
-func (noopStore) GetRoom(ctx context.Context, id string) (*types.Room, error)       { return nil, ErrNotImplemented }
-func (noopStore) ListRooms(ctx context.Context) ([]*types.Room, error)             { return nil, ErrNotImplemented }
-func (noopStore) AddRoomMember(ctx context.Context, roomID, nodeID string) error   { return ErrNotImplemented }
-func (noopStore) RemoveRoomMember(ctx context.Context, roomID, nodeID string) error { return ErrNotImplemented }
-func (noopStore) ListRoomMembers(ctx context.Context, roomID string) ([]*Node, error) { return nil, ErrNotImplemented }
-func (noopStore) SetPortRule(ctx context.Context, rule *PortRule) error            { return ErrNotImplemented }
-func (noopStore) GetPortRules(ctx context.Context, nodeID string) ([]*PortRule, error) { return nil, ErrNotImplemented }
-func (noopStore) DeletePortRule(ctx context.Context, ruleID string) error         { return ErrNotImplemented }
-func (noopStore) CreateAPIUser(ctx context.Context, u *APIUser) error              { return ErrNotImplemented }
-func (noopStore) GetAPIUser(ctx context.Context, username string) (*APIUser, error) { return nil, ErrNotImplemented }
-func (noopStore) RevokeAPIToken(ctx context.Context, tokenID string) error        { return ErrNotImplemented }
-func (noopStore) Close() error                                                     { return nil }
+func (noopStore) RegisterNode(ctx context.Context, n *Node) error { return ErrNotImplemented }
+func (noopStore) GetNode(ctx context.Context, id string) (*Node, error) {
+	return nil, ErrNotImplemented
+}
+func (noopStore) ListNodes(ctx context.Context, f NodeFilter) ([]*Node, error) {
+	return nil, ErrNotImplemented
+}
+func (noopStore) UpdateNodeStatus(ctx context.Context, id string, s NodeStatus) error {
+	return ErrNotImplemented
+}
+func (noopStore) DeleteNode(ctx context.Context, id string) error     { return ErrNotImplemented }
+func (noopStore) UnbindNodeID(ctx context.Context, id string) error   { return ErrNotImplemented }
+func (noopStore) CreateRoom(ctx context.Context, r *types.Room) error { return ErrNotImplemented }
+func (noopStore) GetRoom(ctx context.Context, id string) (*types.Room, error) {
+	return nil, ErrNotImplemented
+}
+func (noopStore) ListRooms(ctx context.Context) ([]*types.Room, error) { return nil, ErrNotImplemented }
+func (noopStore) AddRoomMember(ctx context.Context, roomID, nodeID string) error {
+	return ErrNotImplemented
+}
+func (noopStore) RemoveRoomMember(ctx context.Context, roomID, nodeID string) error {
+	return ErrNotImplemented
+}
+func (noopStore) ListRoomMembers(ctx context.Context, roomID string) ([]*Node, error) {
+	return nil, ErrNotImplemented
+}
+func (noopStore) SetPortRule(ctx context.Context, rule *PortRule) error { return ErrNotImplemented }
+func (noopStore) GetPortRules(ctx context.Context, nodeID string) ([]*PortRule, error) {
+	return nil, ErrNotImplemented
+}
+func (noopStore) DeletePortRule(ctx context.Context, ruleID string) error { return ErrNotImplemented }
+func (noopStore) CreateAPIUser(ctx context.Context, u *APIUser) error     { return ErrNotImplemented }
+func (noopStore) GetAPIUser(ctx context.Context, username string) (*APIUser, error) {
+	return nil, ErrNotImplemented
+}
+func (noopStore) RevokeAPIToken(ctx context.Context, tokenID string) error { return ErrNotImplemented }
+func (noopStore) Close() error                                             { return nil }

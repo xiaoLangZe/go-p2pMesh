@@ -14,10 +14,10 @@ import (
 // intermediate CA. This is the code shape of invariant I9 — the authority
 // that matters most is not reachable from any online process.
 type CertAuth struct {
-	rootPub  [32]byte
-	caKP     *KeyPair
-	caCert   *CACert
-	tofu     bool
+	rootPub   [32]byte
+	caKP      *KeyPair
+	caCert    *CACert
+	tofu      bool
 	knownPubs map[[32]byte]bool
 	// now is the clock (Unix seconds), injectable for tests.
 	now func() time.Time

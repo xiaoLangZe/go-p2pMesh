@@ -101,29 +101,29 @@ func (c *Client) Stop() {
 
 // Config is the client runtime configuration.
 type Config struct {
-	Bootstrap        []string
-	ListenPort       int
-	RoomID           string
-	RoomKey          string
-	StunServers      []string
-	HolepunchWindow  int
-	HolepunchParallel int
-	TurnEnabled      bool
-	TurnAddr         string
-	TunnelMTU        int
-	KCPWindow        int
+	Bootstrap               []string
+	ListenPort              int
+	RoomID                  string
+	RoomKey                 string
+	StunServers             []string
+	HolepunchWindow         int
+	HolepunchParallel       int
+	TurnEnabled             bool
+	TurnAddr                string
+	TunnelMTU               int
+	KCPWindow               int
 	AllowUnreliableFallback bool
-	NetworkCIDR      string
-	PortControlPolicy string
-	PortControlDB    string
-	LogLevel         string
-	LogFile          string
+	NetworkCIDR             string
+	PortControlPolicy       string
+	PortControlDB           string
+	LogLevel                string
+	LogFile                 string
 }
 
 // DefaultConfig returns a Config populated with sensible defaults.
 func DefaultConfig() *Config {
 	return &Config{
-		Bootstrap: []string{},
+		Bootstrap:  []string{},
 		ListenPort: 0,
 		StunServers: []string{
 			"stun.l.google.com:19302",
@@ -131,7 +131,7 @@ func DefaultConfig() *Config {
 			"stun.cloudflare.com:3478",
 		},
 		HolepunchWindow:   64,
-		HolepunchParallel:  256,
+		HolepunchParallel: 256,
 		TunnelMTU:         1280,
 		KCPWindow:         256,
 		NetworkCIDR:       "fd00:9bd8::/64",

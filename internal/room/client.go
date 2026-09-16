@@ -20,9 +20,9 @@ type RoomMember struct {
 // Client is the client-side room logic.  It tracks the current room
 // membership and receives push notifications from the server.
 type Client struct {
-	mu         sync.RWMutex
+	mu          sync.RWMutex
 	currentRoom string
-	members    map[types.NodeID]*RoomMember
+	members     map[types.NodeID]*RoomMember
 }
 
 // NewClient creates a room Client.

@@ -14,34 +14,34 @@ type ServerConfig struct {
 	MeshPeers []string
 
 	// [api]
-	APIEnabled       bool
-	APIHost          string
-	APIPort          int
-	APICertFile      string
-	APIKeyFile       string
-	APIClientCAFile  string
-	JWTSecret        string
-	TokenTTLHours    int
-	AdminUser        string
-	AdminPassword    string
+	APIEnabled      bool
+	APIHost         string
+	APIPort         int
+	APICertFile     string
+	APIKeyFile      string
+	APIClientCAFile string
+	JWTSecret       string
+	TokenTTLHours   int
+	AdminUser       string
+	AdminPassword   string
 
 	// [database]
-	DatabaseType     string
-	DatabaseDSN      string
-	MaxOpenConns     int
-	MaxIdleConns     int
+	DatabaseType string
+	DatabaseDSN  string
+	MaxOpenConns int
+	MaxIdleConns int
 
 	// [network]
-	NetworkCIDR      string
+	NetworkCIDR string
 
 	// [security]
-	RootKeyFile      string
-	TrustOnFirstUse  bool
-	NodeTimeout      string
+	RootKeyFile     string
+	TrustOnFirstUse bool
+	NodeTimeout     string
 
 	// [log]
-	LogLevel         string
-	LogFile          string
+	LogLevel string
+	LogFile  string
 }
 
 // DefaultServerConfig returns the server configuration with default values.
@@ -51,22 +51,22 @@ type ServerConfig struct {
 // is an explicit decision, not a default.
 func DefaultServerConfig() *ServerConfig {
 	return &ServerConfig{
-		Host:           "0.0.0.0",
-		Port:           29683,
-		APIEnabled:     true,
-		APIHost:        "127.0.0.1",
-		APIPort:        29684,
-		TokenTTLHours:  24,
-		AdminUser:      "admin",
-		DatabaseType:   "sqlite",
-		DatabaseDSN:    "data/gop2pmesh.db",
-		MaxOpenConns:   50,
-		MaxIdleConns:   10,
-		NetworkCIDR:    "fd00:9bd8::/64",
-		RootKeyFile:    "root.key",
+		Host:            "0.0.0.0",
+		Port:            29683,
+		APIEnabled:      true,
+		APIHost:         "127.0.0.1",
+		APIPort:         29684,
+		TokenTTLHours:   24,
+		AdminUser:       "admin",
+		DatabaseType:    "sqlite",
+		DatabaseDSN:     "data/gop2pmesh.db",
+		MaxOpenConns:    50,
+		MaxIdleConns:    10,
+		NetworkCIDR:     "fd00:9bd8::/64",
+		RootKeyFile:     "root.key",
 		TrustOnFirstUse: false,
-		NodeTimeout:    "90s",
-		LogLevel:       "info",
+		NodeTimeout:     "90s",
+		LogLevel:        "info",
 	}
 }
 

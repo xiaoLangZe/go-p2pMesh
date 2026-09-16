@@ -17,20 +17,20 @@ var ErrNotImplemented = fmt.Errorf("holepunch not implemented in current phase")
 type Strategy string
 
 const (
-	StrategyIPv6Direct   Strategy = "ipv6_direct"
-	StrategyUDPStandard  Strategy = "udp_standard"
-	StrategyUDPPredict   Strategy = "udp_predict"
+	StrategyIPv6Direct      Strategy = "ipv6_direct"
+	StrategyUDPStandard     Strategy = "udp_standard"
+	StrategyUDPPredict      Strategy = "udp_predict"
 	StrategyTCPSimultaneous Strategy = "tcp_simultaneous"
-	StrategyTURNRelay    Strategy = "turn_relay"
+	StrategyTURNRelay       Strategy = "turn_relay"
 )
 
 // PunchResult records the outcome of a hole-punch attempt.
 type PunchResult struct {
-	Strategy  Strategy
-	Success   bool
-	LocalAddr net.Addr
+	Strategy   Strategy
+	Success    bool
+	LocalAddr  net.Addr
 	RemoteAddr net.Addr
-	Error     error
+	Error      error
 }
 
 // Engine coordinates the hole-punching strategy matrix.

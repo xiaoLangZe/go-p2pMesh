@@ -115,7 +115,7 @@ func (s *memStore) GetAPIUser(ctx context.Context, username string) (*storage.AP
 	return nil, errors.New("not found")
 }
 func (s *memStore) RevokeAPIToken(ctx context.Context, tokenID string) error { return nil }
-func (s *memStore) Close() error                                            { return nil }
+func (s *memStore) Close() error                                             { return nil }
 
 // TestCreateRoom checks room creation.
 func TestCreateRoom(t *testing.T) {

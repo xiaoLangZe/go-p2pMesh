@@ -104,12 +104,12 @@ func TestExplicitRoomKeyOverridesMeshSecret(t *testing.T) {
 // overlaps the address ranges a user's local network is likely to use.
 func TestAddressSpaceDoesNotConflictWithLANs(t *testing.T) {
 	lanRanges := []string{
-		"10.0.0.0/8",      // RFC 1918
-		"172.16.0.0/12",   // RFC 1918
-		"192.168.0.0/16",  // RFC 1918 (most home networks)
-		"100.64.0.0/10",   // RFC 6598 CGNAT
-		"169.254.0.0/16",  // link-local / APIPA
-		"127.0.0.0/8",     // loopback
+		"10.0.0.0/8",     // RFC 1918
+		"172.16.0.0/12",  // RFC 1918
+		"192.168.0.0/16", // RFC 1918 (most home networks)
+		"100.64.0.0/10",  // RFC 6598 CGNAT
+		"169.254.0.0/16", // link-local / APIPA
+		"127.0.0.0/8",    // loopback
 	}
 	lanPrefixes := make([]netip.Prefix, 0, len(lanRanges))
 	for _, r := range lanRanges {

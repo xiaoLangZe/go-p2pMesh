@@ -121,8 +121,8 @@ func TestParseQueryRoundTrip(t *testing.T) {
 func TestBuildReplyA(t *testing.T) {
 	q := &Query{ID: 7, QName: "node.xiaolangze", QType: TypeA, QClass: ClassIN, WantRec: true}
 	reply := BuildReply(q, []net.IP{
-		net.ParseIP("240.0.0.10"),     // v4: kept
-		net.ParseIP("fd00:9bd8::10"),  // v6: filtered out for TypeA
+		net.ParseIP("240.0.0.10"),    // v4: kept
+		net.ParseIP("fd00:9bd8::10"), // v6: filtered out for TypeA
 	})
 	if len(reply) < 12 {
 		t.Fatal("reply too short")

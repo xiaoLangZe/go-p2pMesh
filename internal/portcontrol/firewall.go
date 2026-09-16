@@ -28,6 +28,6 @@ type Firewall interface {
 // Controller, not the firewall.
 type NoopFirewall struct{}
 
-func (NoopFirewall) DenyAllInbound() error                      { return nil }
-func (NoopFirewall) AllowPort(p string, v int) error            { return nil }
-func (NoopFirewall) RemovePort(p string, v int) error           { return nil }
+func (NoopFirewall) DenyAllInbound() error            { return nil }
+func (NoopFirewall) AllowPort(p string, v int) error  { return nil }
+func (NoopFirewall) RemovePort(p string, v int) error { return nil }
