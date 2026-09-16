@@ -19,6 +19,7 @@ import (
 
 	"github.com/xiaoLangZe/go-p2pmesh/internal/bootstrap"
 	"github.com/xiaoLangZe/go-p2pmesh/internal/crypto"
+	"github.com/xiaoLangZe/go-p2pmesh/internal/room"
 	"github.com/xiaoLangZe/go-p2pmesh/internal/servermesh"
 	"github.com/xiaoLangZe/go-p2pmesh/internal/storage"
 )
@@ -36,6 +37,7 @@ type Server struct {
 	store    storage.Store
 	bootSrv  *bootstrap.Server
 	mesh     *servermesh.Mesh
+	rooms    *room.Manager
 	certAuth *crypto.CertAuth
 }
 
@@ -75,6 +77,9 @@ func New(opts ...Option) (*Server, error) {
 	// Initialize the server mesh.
 	mesh := servermesh.NewMesh(localID, logger)
 
+	// Initialize the room manager over the same store.
+	rooms := room.NewManager(store)
+
 	// Initialize the bootstrap server.
 	bootAddr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 	bootSrv := bootstrap.NewServer(bootAddr, logger)
@@ -85,11 +90,16 @@ func New(opts ...Option) (*Server, error) {
 		store:    store,
 		bootSrv:  bootSrv,
 		mesh:     mesh,
+		rooms:    rooms,
 		certAuth: ca,
 	}
 
 	return s, nil
 }
+
+// Rooms returns the server's room manager. It is used by the control plane
+// to answer room join/leave/member-list requests (§7).
+func (s *Server) Rooms() *room.Manager { return s.rooms }
 
 // Start begins listening on the configured port and serving requests.
 func (s *Server) Start() error {
