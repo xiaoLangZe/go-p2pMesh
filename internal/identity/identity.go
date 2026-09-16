@@ -18,7 +18,7 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/yourorg/go-p2pmesh/pkg/types"
+	"github.com/xiaoLangZe/go-p2pmesh/pkg/types"
 )
 
 // Identity bundles a NodeID with its cryptographic key material.

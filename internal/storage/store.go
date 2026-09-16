@@ -14,7 +14,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/yourorg/go-p2pmesh/pkg/types"
+	"github.com/xiaoLangZe/go-p2pmesh/pkg/types"
 )
 
 // NodeStatus represents the online/offline state of a node.

@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/yourorg/go-p2pmesh/pkg/types"
+	"github.com/xiaoLangZe/go-p2pmesh/pkg/types"
 )
 
 // newTestStore opens a temporary SQLite store and closes it when the test ends.

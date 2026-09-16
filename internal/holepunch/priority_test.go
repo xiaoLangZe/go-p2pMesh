@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yourorg/go-p2pmesh/pkg/types"
+	"github.com/xiaoLangZe/go-p2pmesh/pkg/types"
 )
 
 func peer(id string, room types.RoomID, joined time.Time) PeerInfo {

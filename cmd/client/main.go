@@ -28,9 +28,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/yourorg/go-p2pmesh/internal/config"
-	"github.com/yourorg/go-p2pmesh/internal/sysutil"
-	"github.com/yourorg/go-p2pmesh/pkg/client"
+	"github.com/xiaoLangZe/go-p2pmesh/internal/config"
+	"github.com/xiaoLangZe/go-p2pmesh/internal/sysutil"
+	"github.com/xiaoLangZe/go-p2pmesh/pkg/client"
 )
 
 func main() {
@@ -112,6 +112,7 @@ func main() {
 		client.WithSTUNServers(cfg.StunServers),
 		client.WithHolepunchParams(cfg.PredictWindow, cfg.PredictParallel),
 		client.WithTunnelMTU(cfg.TunnelMTU),
+		client.WithAllowUnreliableFallback(cfg.AllowUnreliableFallback),
 		client.WithPortControlPolicy(cfg.PortControlPolicy),
 		client.WithLogLevel(cfg.LogLevel),
 	}

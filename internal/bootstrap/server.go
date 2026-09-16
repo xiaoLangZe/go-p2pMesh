@@ -19,9 +19,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yourorg/go-p2pmesh/internal/crypto"
-	"github.com/yourorg/go-p2pmesh/internal/protocol"
-	"github.com/yourorg/go-p2pmesh/pkg/types"
+	"github.com/xiaoLangZe/go-p2pmesh/internal/crypto"
+	"github.com/xiaoLangZe/go-p2pmesh/internal/protocol"
+	"github.com/xiaoLangZe/go-p2pmesh/pkg/types"
 )
 
 // AddrResolver derives the mesh addresses a node should use. The server injects

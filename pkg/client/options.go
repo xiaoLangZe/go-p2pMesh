@@ -47,6 +47,13 @@ func WithTunnelMTU(mtu int) Option {
 	return func(c *Config) { c.TunnelMTU = mtu }
 }
 
+// WithAllowUnreliableFallback controls whether KCP may degrade to raw UDP.
+// Setting false (invariant I6) forbids the fallback so a connection fails
+// loudly rather than silently losing reliability.
+func WithAllowUnreliableFallback(allow bool) Option {
+	return func(c *Config) { c.AllowUnreliableFallback = allow }
+}
+
 // WithPortControlPolicy sets the default port policy: "deny" or "allow".
 func WithPortControlPolicy(policy string) Option {
 	return func(c *Config) { c.PortControlPolicy = policy }

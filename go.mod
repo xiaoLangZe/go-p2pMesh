@@ -1,4 +1,4 @@
-module github.com/yourorg/go-p2pmesh
+module github.com/xiaoLangZe/go-p2pmesh
 
 go 1.26.4
 

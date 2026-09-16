@@ -407,6 +407,7 @@ used. Templates with the same keys and comments live in `configs/`.
 | --- | --- | --- |
 | `mtu` | `1280` | MTU of the tunnel interface; must be at least `576`. |
 | `kcp_window` | `256` | KCP send and receive window size. |
+| `allow_unreliable_fallback` | `true` | When `false`, KCP failure does not degrade to raw UDP; the connection fails loudly instead (invariant I6). |
 
 `[network]`
 

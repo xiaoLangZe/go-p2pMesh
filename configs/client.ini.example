@@ -26,8 +26,9 @@ turn = false
 turn_addr =
 
 [tunnel]
-mtu = 1280
+mtu = 1280                         ; 不得小于 576
 kcp_window = 256
+allow_unreliable_fallback = true   ; 置 false 则禁止回退裸 UDP（不变量 I6）
 
 [network]
 cidr = fd00:9bd8::/64

@@ -2,7 +2,7 @@
 package room
 
 import (
-	"github.com/yourorg/go-p2pmesh/pkg/types"
+	"github.com/xiaoLangZe/go-p2pmesh/pkg/types"
 )
 
 // Manager is the server-side room manager.  It creates, deletes, and

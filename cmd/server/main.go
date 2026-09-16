@@ -27,9 +27,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/yourorg/go-p2pmesh/internal/config"
-	"github.com/yourorg/go-p2pmesh/internal/sysutil"
-	"github.com/yourorg/go-p2pmesh/pkg/server"
+	"github.com/xiaoLangZe/go-p2pmesh/internal/config"
+	"github.com/xiaoLangZe/go-p2pmesh/internal/sysutil"
+	"github.com/xiaoLangZe/go-p2pmesh/pkg/server"
 )
 
 func main() {

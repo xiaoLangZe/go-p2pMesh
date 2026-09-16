@@ -3,7 +3,7 @@ package holepunch
 import (
 	"sort"
 
-	"github.com/yourorg/go-p2pmesh/pkg/types"
+	"github.com/xiaoLangZe/go-p2pmesh/pkg/types"
 )
 
 // Rule R1: peers in the same room are connected first.

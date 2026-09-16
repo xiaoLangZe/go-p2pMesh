@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/yourorg/go-p2pmesh/pkg/types"
+	"github.com/xiaoLangZe/go-p2pmesh/pkg/types"
 )
 
 var errNotImplemented = fmt.Errorf("room not implemented in current phase")

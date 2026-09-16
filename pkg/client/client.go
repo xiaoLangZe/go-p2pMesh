@@ -112,6 +112,7 @@ type Config struct {
 	TurnAddr         string
 	TunnelMTU        int
 	KCPWindow        int
+	AllowUnreliableFallback bool
 	NetworkCIDR      string
 	PortControlPolicy string
 	PortControlDB    string

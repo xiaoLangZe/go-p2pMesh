@@ -17,10 +17,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yourorg/go-p2pmesh/internal/bootstrap"
-	"github.com/yourorg/go-p2pmesh/internal/crypto"
-	"github.com/yourorg/go-p2pmesh/internal/servermesh"
-	"github.com/yourorg/go-p2pmesh/internal/storage"
+	"github.com/xiaoLangZe/go-p2pmesh/internal/bootstrap"
+	"github.com/xiaoLangZe/go-p2pmesh/internal/crypto"
+	"github.com/xiaoLangZe/go-p2pmesh/internal/servermesh"
+	"github.com/xiaoLangZe/go-p2pmesh/internal/storage"
 )
 
 // Server is the top-level server instance.  It owns all subsystems

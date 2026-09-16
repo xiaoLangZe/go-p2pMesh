@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/yourorg/go-p2pmesh/pkg/types"
+	"github.com/xiaoLangZe/go-p2pmesh/pkg/types"
 
 	// Pure-Go SQLite driver (no CGO required).
 	_ "modernc.org/sqlite"

@@ -338,6 +338,7 @@ gop2pmesh-client -bootstrap 203.0.113.10:29683
 | --- | --- | --- |
 | `mtu` | `1280` | 隧道接口的 MTU，不得小于 `576`。 |
 | `kcp_window` | `256` | KCP 收发窗口大小。 |
+| `allow_unreliable_fallback` | `true` | 置 `false` 时禁止 KCP 回退裸 UDP——连接直接失败并告警，不静默降级（不变量 I6）。 |
 
 `[network]`
 

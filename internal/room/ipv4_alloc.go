@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/yourorg/go-p2pmesh/pkg/types"
+	"github.com/xiaoLangZe/go-p2pmesh/pkg/types"
 )
 
 // IPv4Allocator derives per-room IPv4 addresses.
