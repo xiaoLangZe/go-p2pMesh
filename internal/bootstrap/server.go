@@ -61,6 +61,14 @@ func NewServer(addr string, logger *slog.Logger) *Server {
 	}
 }
 
+// ClientCount returns the number of live control-plane connections.
+// §16.6's capacity axis one: the coordination load a server carries.
+func (s *Server) ClientCount() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return len(s.clients)
+}
+
 // SetAddrResolver installs the callback used to compute the mesh addresses
 // reported in AUTH_OK. Until one is set, AUTH_OK carries empty addresses.
 func (s *Server) SetAddrResolver(fn AddrResolver) {
