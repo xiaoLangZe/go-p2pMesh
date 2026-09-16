@@ -11,6 +11,8 @@ package portcontrol
 import (
 	"sync"
 	"time"
+
+	"github.com/xiaoLangZe/go-p2pmesh/pkg/types"
 )
 
 // PortRule defines a single port access rule.
@@ -20,9 +22,12 @@ type PortRule struct {
 	Protocol    string // "tcp" or "udp"
 	LocalPort   int    // real local port the service listens on
 	VirtualPort int    // external-facing port on the IPv6 address
-	Description string
-	Enabled     bool
-	CreatedAt   time.Time
+	// AllowedRooms lists the rooms whose members may reach this port.
+	// Empty means the rule default: same-room sources only (§8.2).
+	AllowedRooms []types.RoomID
+	Description  string
+	Enabled      bool
+	CreatedAt    time.Time
 }
 
 // Policy is the default port policy.
@@ -93,6 +98,74 @@ func (c *Controller) IsAllowed(virtualPort int) bool {
 	}
 	r, ok := c.rules[virtualPort]
 	return ok && r.Enabled
+}
+
+// InboundDecision is the verdict of a virtual-port access attempt from a
+// specific source, including source-room semantics (§8.1.1).
+type InboundDecision int
+
+const (
+	// DecisionAllow: forward to the local service.
+	DecisionAllow InboundDecision = iota
+	// DecisionDropUnconfigured: no rule exists for the port — silent drop;
+	// the probe may count toward scan detection (I10).
+	DecisionDropUnconfigured
+	// DecisionDropNotAllowed: rule exists but this source room is not
+	// permitted — silent drop, indistinguishable from an absent port.
+	DecisionDropNotAllowed
+	// DecisionDropDisabled: rule exists but is disabled — silent drop.
+	DecisionDropDisabled
+)
+
+// Source identifies where an inbound attempt came from (§8.1.1).
+type Source struct {
+	// Room is the source's room, empty when unknown.
+	Room types.RoomID
+	// SameRoom reports whether the source is in the same room as this node.
+	// It is the caller's job to establish this (room-scoped addressing).
+	SameRoom bool
+	// Addr is the source mesh address, for scan accounting (I10).
+	Addr string
+}
+
+// Decide evaluates an inbound attempt against the rule table and source.
+//
+// The matrix (§8.1.1):
+//   - configured + enabled + source room allowed → Allow
+//   - configured + enabled + source room not allowed → DropNotAllowed
+//   - configured + disabled → DropDisabled
+//   - unconfigured → DropUnconfigured (scan accounting applies elsewhere)
+func (c *Controller) Decide(virtualPort int, src Source) InboundDecision {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	if c.policy == PolicyAllow {
+		return DecisionAllow
+	}
+	r, ok := c.rules[virtualPort]
+	if !ok {
+		return DecisionDropUnconfigured
+	}
+	if !r.Enabled {
+		return DecisionDropDisabled
+	}
+	if RuleAllowsSource(r, src) {
+		return DecisionAllow
+	}
+	return DecisionDropNotAllowed
+}
+
+// RuleAllowsSource is the source-room gate for one rule (§8.2):
+// empty AllowedRooms means same-room only; otherwise explicit membership.
+func RuleAllowsSource(r *PortRule, src Source) bool {
+	if len(r.AllowedRooms) == 0 {
+		return src.SameRoom
+	}
+	for _, room := range r.AllowedRooms {
+		if room == src.Room {
+			return true
+		}
+	}
+	return false
 }
 
 // ListRules returns all registered rules.

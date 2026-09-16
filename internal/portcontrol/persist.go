@@ -44,14 +44,15 @@ func (p *RulePersistence) SaveRule(ctx context.Context, rule *PortRule) error {
 		return nil
 	}
 	sr := &storage.PortRule{
-		ID:          rule.ID,
-		NodeID:      rule.NodeID,
-		Protocol:    rule.Protocol,
-		LocalPort:   rule.LocalPort,
-		VirtualPort: rule.VirtualPort,
-		Description: rule.Description,
-		Enabled:     rule.Enabled,
-		CreatedAt:   rule.CreatedAt,
+		ID:           rule.ID,
+		NodeID:       rule.NodeID,
+		Protocol:     rule.Protocol,
+		LocalPort:    rule.LocalPort,
+		VirtualPort:  rule.VirtualPort,
+		Description:  rule.Description,
+		AllowedRooms: encodeAllowedRooms(rule.AllowedRooms),
+		Enabled:      rule.Enabled,
+		CreatedAt:    rule.CreatedAt,
 	}
 	if sr.NodeID == "" {
 		sr.NodeID = p.nodeID
@@ -79,14 +80,15 @@ func (p *RulePersistence) LoadRules(ctx context.Context) ([]*PortRule, error) {
 	out := make([]*PortRule, 0, len(stored))
 	for _, sr := range stored {
 		out = append(out, &PortRule{
-			ID:          sr.ID,
-			NodeID:      sr.NodeID,
-			Protocol:    sr.Protocol,
-			LocalPort:   sr.LocalPort,
-			VirtualPort: sr.VirtualPort,
-			Description: sr.Description,
-			Enabled:     sr.Enabled,
-			CreatedAt:   sr.CreatedAt,
+			ID:           sr.ID,
+			NodeID:       sr.NodeID,
+			Protocol:     sr.Protocol,
+			LocalPort:    sr.LocalPort,
+			VirtualPort:  sr.VirtualPort,
+			Description:  sr.Description,
+			AllowedRooms: decodeAllowedRooms(sr.AllowedRooms),
+			Enabled:      sr.Enabled,
+			CreatedAt:    sr.CreatedAt,
 		})
 	}
 	return out, nil
@@ -104,14 +106,15 @@ func (c *Controller) ApplyServerRules(ctx context.Context, rules []storage.PortR
 	applied := 0
 	for _, sr := range rules {
 		pc := &PortRule{
-			ID:          sr.ID,
-			NodeID:      sr.NodeID,
-			Protocol:    sr.Protocol,
-			LocalPort:   sr.LocalPort,
-			VirtualPort: sr.VirtualPort,
-			Description: sr.Description,
-			Enabled:     sr.Enabled,
-			CreatedAt:   sr.CreatedAt,
+			ID:           sr.ID,
+			NodeID:       sr.NodeID,
+			Protocol:     sr.Protocol,
+			LocalPort:    sr.LocalPort,
+			VirtualPort:  sr.VirtualPort,
+			Description:  sr.Description,
+			AllowedRooms: decodeAllowedRooms(sr.AllowedRooms),
+			Enabled:      sr.Enabled,
+			CreatedAt:    sr.CreatedAt,
 		}
 		c.rules[pc.VirtualPort] = pc
 		c.local[pc.LocalPort] = pc

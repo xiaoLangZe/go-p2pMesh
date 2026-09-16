@@ -22,6 +22,9 @@ var migrationSQL string
 //go:embed migrations/002_ipv4.sql
 var migrationIPv4SQL string
 
+//go:embed migrations/003_allowed_rooms.sql
+var migrationAllowedRoomsSQL string
+
 // SQLStore implements Store using database/sql + sqlx.
 // It works with SQLite (via modernc.org/sqlite), MySQL, and PostgreSQL.
 // All queries use parameter binding — no string concatenation is permitted.
@@ -75,7 +78,20 @@ func (s *SQLStore) migrate() error {
 	}
 	// Execute the IPv4 schema additions.
 	// SQLite ALTER TABLE statements must be run individually.
-	for _, stmt := range splitStatements(migrationIPv4SQL) {
+	if err := s.runAlterStatements(migrationIPv4SQL, "002"); err != nil {
+		return err
+	}
+	// Execute the allowed-rooms addition.
+	if err := s.runAlterStatements(migrationAllowedRoomsSQL, "003"); err != nil {
+		return err
+	}
+	return nil
+}
+
+// runAlterStatements executes an ALTER-style migration statement by
+// statement, tolerating duplicate-column errors for idempotent re-runs.
+func (s *SQLStore) runAlterStatements(script, name string) error {
+	for _, stmt := range splitStatements(script) {
 		stmt = trimSpace(stmt)
 		if stmt == "" {
 			continue
@@ -85,7 +101,7 @@ func (s *SQLStore) migrate() error {
 			if isDuplicateColumnErr(err) {
 				continue
 			}
-			return fmt.Errorf("migration 002: %w", err)
+			return fmt.Errorf("migration %s: %w", name, err)
 		}
 	}
 	return nil
@@ -271,23 +287,24 @@ func (s *SQLStore) ListRoomMembers(ctx context.Context, roomID string) ([]*Node,
 
 func (s *SQLStore) SetPortRule(ctx context.Context, rule *PortRule) error {
 	_, err := s.db.ExecContext(ctx, s.rebind(`
-		INSERT INTO port_rules (id, node_id, protocol, local_port, virtual_port, description, enabled, created_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO port_rules (id, node_id, protocol, local_port, virtual_port, description, allowed_rooms, enabled, created_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT(id) DO UPDATE SET
 			protocol = excluded.protocol,
 			local_port = excluded.local_port,
 			virtual_port = excluded.virtual_port,
 			description = excluded.description,
+			allowed_rooms = excluded.allowed_rooms,
 			enabled = excluded.enabled`),
 		rule.ID, rule.NodeID, rule.Protocol, rule.LocalPort,
-		rule.VirtualPort, rule.Description, rule.Enabled, time.Now().UTC())
+		rule.VirtualPort, rule.Description, rule.AllowedRooms, rule.Enabled, time.Now().UTC())
 	return err
 }
 
 func (s *SQLStore) GetPortRules(ctx context.Context, nodeID string) ([]*PortRule, error) {
 	var rules []*PortRule
 	err := s.db.SelectContext(ctx, &rules, s.rebind(`
-		SELECT id, node_id, protocol, local_port, virtual_port, description, enabled, created_at
+		SELECT id, node_id, protocol, local_port, virtual_port, description, allowed_rooms, enabled, created_at
 		FROM port_rules WHERE node_id = ? AND enabled = TRUE
 		ORDER BY virtual_port`), nodeID)
 	return rules, err

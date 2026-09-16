@@ -18,7 +18,7 @@ func TestForwarderDefaultDeny(t *testing.T) {
 	c := NewController(PolicyDeny)
 	f := NewForwarder(c)
 
-	if _, err := f.DialVirtual(60022, "tcp"); err == nil {
+	if _, err := f.DialVirtual(60022, "tcp", Source{SameRoom: true, Addr: "fd00:1::1"}); err == nil {
 		t.Fatal("expected error for unconfigured virtual port (default deny)")
 	}
 }
@@ -34,7 +34,7 @@ func TestForwarderProtocolMismatch(t *testing.T) {
 		VirtualPort: 60022,
 		Enabled:     true,
 	})
-	if _, err := f.DialVirtual(60022, "udp"); err == nil {
+	if _, err := f.DialVirtual(60022, "udp", Source{SameRoom: true, Addr: "fd00:1::1"}); err == nil {
 		t.Error("expected protocol mismatch error for udp on a tcp rule")
 	}
 }
@@ -50,7 +50,7 @@ func TestForwarderDisabledRule(t *testing.T) {
 		VirtualPort: 60022,
 		Enabled:     false,
 	})
-	if _, err := f.DialVirtual(60022, "tcp"); err == nil {
+	if _, err := f.DialVirtual(60022, "tcp", Source{SameRoom: true, Addr: "fd00:1::1"}); err == nil {
 		t.Error("expected error for disabled rule")
 	}
 }
@@ -89,7 +89,7 @@ func TestForwarderRoutesToLocal(t *testing.T) {
 		Enabled:     true,
 	})
 
-	conn, err := f.DialVirtual(60022, "tcp")
+	conn, err := f.DialVirtual(60022, "tcp", Source{SameRoom: true, Addr: "fd00:1::1"})
 	if err != nil {
 		t.Fatalf("DialVirtual: %v", err)
 	}

@@ -47,8 +47,11 @@ type PortRule struct {
 	LocalPort   int    `json:"local_port" db:"local_port"`
 	VirtualPort int    `json:"virtual_port" db:"virtual_port"`
 	Description string `json:"description" db:"description"`
-	Enabled     bool   `json:"enabled" db:"enabled"`
-	CreatedAt   time.Time `json:"created_at" db:"created_at"`
+	// AllowedRooms is a JSON array of RoomIDs (e.g. `["room-a"]`).
+	// Empty means the rule's default: same-room sources only (§8.2).
+	AllowedRooms string    `json:"allowed_rooms" db:"allowed_rooms"`
+	Enabled      bool      `json:"enabled" db:"enabled"`
+	CreatedAt    time.Time `json:"created_at" db:"created_at"`
 }
 
 // APIUser is a REST API user account.
